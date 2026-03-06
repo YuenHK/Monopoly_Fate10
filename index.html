@@ -557,6 +557,8 @@
     let currentIndex = 0;
     let isAnimating = false;
     let boardW = 0, boardH = 0;
+	
+	let consecutiveSpecialCount = 0; // 記錄連續抽中特殊格子的次數
 
     // 每位學生的房屋紀錄：{ [studentId]: { small, middle, large } }
     let studentHouses = {};
@@ -916,21 +918,25 @@
         return { col: 1, row: H - 1 - (i - (2 * W + H - 2)) };
     }
 
-    function getHouseIconsHTML(houses) {
+        function getHouseIconsHTML(houses) {
         if (!houses) return '';
         const parts = [];
+        // 修改：將 img 標籤改為 Emoji，並調整字體大小
+        const style = 'font-size: clamp(12px, 2.5vmin, 24px); line-height: 1;';
+        
         for (let i = 0; i < (houses.small || 0); i++) {
-            parts.push('<span class="house-icon"><img class="house-img" src="./smallhouse.png" alt="small house"></span>');
+            parts.push(`<span class="house-icon" style="${style}">🛖</span>`); // 小房子 Emoji
         }
         for (let i = 0; i < (houses.middle || 0); i++) {
-            parts.push('<span class="house-icon"><img class="house-img" src="./middlehouse.png" alt="middle house"></span>');
+            parts.push(`<span class="house-icon" style="${style}">🏡</span>`); // 中房子 Emoji
         }
         for (let i = 0; i < (houses.large || 0); i++) {
-            parts.push('<span class="house-icon"><img class="house-img" src="./largehouse.png" alt="large house"></span>');
+            parts.push(`<span class="house-icon" style="${style}">🏰</span>`); // 大城堡 Emoji
         }
         if (!parts.length) return '';
         return `<div class="house-container">${parts.join('')}</div>`;
     }
+
 
     function renderBoard() {
         const board = document.getElementById('board-container');
@@ -973,28 +979,71 @@
         if(activeCell) activeCell.classList.add('active');
     }
 
-    function rollDice() {
+        function rollDice() {
         if (isAnimating) return;
-        playSfx('click'); // 點擊音效
-        playSfx('roll');  // 擲骰子音效
+        playSfx('click');
+        playSfx('roll');
         isAnimating = true;
         setControlsEnabled(false);
         closeResult();
+
+        // 1. 先預設隨機結果
         let s1 = Math.floor(Math.random() * 6) + 1;
         let s2 = Math.floor(Math.random() * 6) + 1;
+
+        // 2. 【保底機制】檢查是否連續 2 次以上抽中特殊格子
+        if (consecutiveSpecialCount >= 2) {
+            // 找出所有「能走到學生格子」的步數總和 (骰子總和範圍 2~12)
+            let safeSums = [];
+            for (let sum = 2; sum <= 12; sum++) {
+                // 計算走 sum 步後的索引位置
+                let targetIndex = (currentIndex + sum) % mapData.length;
+                // 如果目標是學生，將這個步數加入安全名單
+                if (mapData[targetIndex].type === 'student') {
+                    safeSums.push(sum);
+                }
+            }
+
+            // 如果有安全步數 (避免地圖上完全沒有學生的極端情況)
+            if (safeSums.length > 0) {
+                // 從安全名單中隨機選一個總步數
+                const finalSum = safeSums[Math.floor(Math.random() * safeSums.length)];
+                
+                // 將總步數拆解為兩顆骰子 (s1, s2)
+                // 邏輯：先隨機決定 s1，但要確保 s2 也在 1~6 之間
+                let validPairs = [];
+                for (let i = 1; i <= 6; i++) {
+                    let j = finalSum - i;
+                    if (j >= 1 && j <= 6) {
+                        validPairs.push([i, j]);
+                    }
+                }
+                // 從合法的骰子組合中隨機選一組
+                const pair = validPairs[Math.floor(Math.random() * validPairs.length)];
+                s1 = pair[0];
+                s2 = pair[1];
+                
+                console.log(`觸發保底機制！強制骰出: ${s1}+${s2}=${finalSum} (目標: ${mapData[(currentIndex + finalSum) % mapData.length].name})`);
+            }
+        }
+
         let count = 0;
         let timer = setInterval(() => {
+            // 動畫期間顯示隨機數字
             document.getElementById('dice1').innerText = Math.floor(Math.random() * 6) + 1;
             document.getElementById('dice2').innerText = Math.floor(Math.random() * 6) + 1;
+            
             if(count++ > 10) {
                 clearInterval(timer);
+                // 顯示最終決定的數字 (可能是隨機，也可能是我們控制過的)
                 document.getElementById('dice1').innerText = s1;
                 document.getElementById('dice2').innerText = s2;
-                startSpinSound(); // 新增：開始移動時播放轉動音效
+                startSpinSound();
                 move(s1 + s2);
             }
         }, 50);
     }
+
 
     function startMarquee() {
         if (isAnimating) return;
@@ -1029,6 +1078,9 @@
         const currentPlayerEl = document.getElementById('current-player');
 
         if (data.type === 'student') {
+		
+			consecutiveSpecialCount = 0; 
+		
             playSfx('win'); // 抽中學生歡呼音效
             setStatus('success', i18n[currentLang].statusWinner);
             if (currentPlayerEl) {
@@ -1063,6 +1115,10 @@
                 zIndex: 3000
             });
         } else {
+		
+			consecutiveSpecialCount++;
+            console.log("連續特殊格子次數:", consecutiveSpecialCount); // 方便你測試看 Log
+		
             playSfx('fate'); // 神祕音效
             const list = data.type === 'chance' ? chanceList : fateList;
             const content = list[Math.floor(Math.random() * list.length)];
@@ -1129,7 +1185,6 @@
     function handleCorrectAnswer(studentId) {
         const newInfo = updateStudentHouses(studentId, 1);
 
-        generateMap();
         renderBoard();
 
         const stu = students.find(s => s.id == studentId) || originalStudents.find(s => s.id == studentId);
@@ -1177,14 +1232,14 @@
         if (btnPlus) {
             btnPlus.onclick = () => {
                 updateStudentHouses(studentId, 1);
-                generateMap();
+                
                 renderBoard();
             };
         }
         if (btnMinus) {
             btnMinus.onclick = () => {
                 updateStudentHouses(studentId, -1);
-                generateMap();
+                
                 renderBoard();
             };
         }
@@ -1194,6 +1249,7 @@
         if (isAnimating) return;
         playSfx('blow'); // 更新：改為播放大風吹專屬音效
         closeResult();
+		consecutiveSpecialCount = 0; // --- 新增這行 ---
         students.sort(() => Math.random() - 0.5);
         generateMap();
         renderBoard();
@@ -1204,6 +1260,7 @@
         if (isAnimating) return;
         playSfx('click'); // 點擊音效
         closeResult();
+		consecutiveSpecialCount = 0; // --- 新增這行 ---
         students = JSON.parse(JSON.stringify(originalStudents));
         currentIndex = 0;
         generateMap();
