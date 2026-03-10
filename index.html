@@ -549,8 +549,8 @@
     let currentLang = 'zh';
     let originalStudents = Array.from({length: 24}, (_, i) => ({ id: i+1, name: `學生${i+1}` }));
     let students = JSON.parse(JSON.stringify(originalStudents));
-    let chanceList = ["下一位抽到的同學可免答並直接加1分", "下一位抽到的同學可指定同學代答", "下一位抽到的同學答對，全班加1分", "下一位抽到的同學回答時，可獲得提示"];
-    let fateList = ["下一位抽到的同學需使用英文作答", "下一位抽到的同學答錯，全班扣1分", "下一位抽到的同學需邊跳邊回答", "下一位抽到的同學答錯，需扣雙倍分數"];
+    let chanceList = ["下一位抽到的同學，可在今堂隨意移動座位", "下一位抽到的同學，可重抽一次"];
+    let fateList = ["下一位抽到的同學，需使用英文作答", "下一位抽到的同學，需邊跳舞邊回答", "下一位抽到的同學，需模仿帶貨直播主的語氣回答", "下一位抽到的同學，需用唱歌的方式把答案唱出來", "下一位抽到的同學，需對著教室裡的一個物品深情地解釋這道題，語氣要像是在告白一樣溫柔", "下一位抽到的同學，需回答後大喊出自創的招式名稱"];
     
     let mapData = [];
     let historyData = []; 
@@ -991,8 +991,8 @@
         let s1 = Math.floor(Math.random() * 6) + 1;
         let s2 = Math.floor(Math.random() * 6) + 1;
 
-        // 2. 【保底機制】檢查是否連續 2 次以上抽中特殊格子
-        if (consecutiveSpecialCount >= 2) {
+        // 2. 【保底機制】檢查是否連續 1 次以上抽中特殊格子
+        if (consecutiveSpecialCount >= 1) {
             // 找出所有「能走到學生格子」的步數總和 (骰子總和範圍 2~12)
             let safeSums = [];
             for (let sum = 2; sum <= 12; sum++) {
