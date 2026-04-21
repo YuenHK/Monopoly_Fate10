@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>大富翁抽籤系統 - 貓貓版</title>
+    <title>大富翁抽籤系統 - 貓貓頭像版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
@@ -28,6 +28,7 @@
             background: #000;
         }
 
+        /* 背景影片容器 */
         .video-background {
             position: fixed;
             top: 0;
@@ -110,13 +111,70 @@
         .cell.fate { background: rgba(255, 230, 230, 0.9); }
         .cell.active { border: 4px solid var(--monopoly-red); box-shadow: inset 0 0 12px var(--monopoly-red); transform: scale(1.05); z-index: 15 !important; background: #fff !important; }
         
-        #center-area { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--center-bg); border: 2px solid var(--border-color); margin: 5px; padding: 10px; position: relative; z-index: 1; }
-        .logo-text { background: var(--monopoly-red); color: #fff; padding: 8px 20px; font-size: clamp(16px, 4vmin, 36px); transform: rotate(-2deg); border: 3px solid #000; box-shadow: 4px 4px 0px #000; margin-bottom: 10px; font-weight: bold; }
-        #status-text { font-size: clamp(12px, 2.2vmin, 20px); margin-bottom: 5px; font-weight: bold; min-height: 25px; }
-        .dice-container { display: flex; gap: 10px; margin-bottom: 10px; }
-        .dice { width: 50px; height: 50px; background: white; border: 3px solid #000; display: flex; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; box-shadow: 3px 3px 0px #000; border-radius: 8px; color: var(--monopoly-red); }
-        .btn-group { display: flex; gap: 8px; margin-bottom: 10px; }
-        button { cursor: pointer; padding: 8px 15px; font-weight: bold; border: 2px solid #000; border-radius: 6px; box-shadow: 3px 3px 0px #000; }
+        /* 縮小後的中間區域 */
+        #center-area { 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            background: var(--center-bg); 
+            border: 2px solid var(--border-color); 
+            margin: 2px; 
+            padding: 5px; 
+            position: relative; 
+            z-index: 1; 
+        }
+
+        .logo-text { 
+            background: var(--monopoly-red); 
+            color: #fff; 
+            padding: 4px 12px; 
+            font-size: clamp(14px, 3vmin, 24px); 
+            transform: rotate(-2deg); 
+            border: 2px solid #000; 
+            box-shadow: 3px 3px 0px #000; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+        }
+
+        #status-text { 
+            font-size: clamp(10px, 1.8vmin, 16px); 
+            margin-bottom: 3px; 
+            font-weight: bold; 
+            min-height: 20px; 
+        }
+
+        .dice-container { display: flex; gap: 8px; margin-bottom: 8px; }
+
+        .dice { 
+            width: 35px; 
+            height: 35px; 
+            background: white; 
+            border: 2px solid #000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 20px; 
+            font-weight: bold; 
+            box-shadow: 2px 2px 0px #000; 
+            border-radius: 6px; 
+            color: var(--monopoly-red); 
+        }
+
+        .btn-group { display: flex; gap: 5px; margin-bottom: 5px; }
+
+        button { 
+            cursor: pointer; 
+            padding: 5px 10px; 
+            font-size: 13px; 
+            font-weight: bold; 
+            border: 2px solid #000; 
+            border-radius: 5px; 
+            box-shadow: 2px 2px 0px #000; 
+        }
+
+        #btn-settings { padding: 3px 8px; font-size: 11px; }
+
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #fff; width: 90%; max-width: 600px; padding: 20px; border-radius: 10px; border: 4px solid #000; max-height: 80vh; overflow-y: auto; }
         textarea { width: 100%; height: 80px; margin: 10px 0; border: 2px solid #000; padding: 8px; box-sizing: border-box; font-size: 14px; }
@@ -263,8 +321,6 @@
         const colors = ['#fdf6e3', '#e0f7fa', '#fce4ec', '#fff3e0', '#e8f5e9', '#fff9c4'];
         
         tempStudents.forEach((s, idx) => {
-            // 為每位同學生成隨機貓咪頭像網址 (使用 placeholder 服務)
-            // 加上隨機參數確保頭像不同
             const randomSeed = Math.floor(Math.random() * 1000);
             const avatarUrl = `https://cataas.com/cat/cute?width=100&height=100&unique=${randomSeed}_${idx}`;
             
@@ -326,7 +382,6 @@
             cell.className = `cell ${data.type}`;
             if(data.type === 'student') {
                 cell.style.backgroundColor = data.color;
-                // 加入頭像與名字
                 cell.innerHTML = `
                     <img src="${data.avatar}" class="cat-avatar" alt="cat">
                     <div class="cell-text">${data.name}</div>
@@ -355,7 +410,7 @@
     function setControlsEnabled(enabled) {
         ['btn-roll', 'btn-marquee', 'btn-settings'].forEach(id => {
             const btn = document.getElementById(id);
-            if(btn) btn.disabled = !enabled;
+            if(el) el.disabled = !enabled;
         });
     }
 
@@ -409,7 +464,6 @@
         modal.style.display = 'flex';
         if(data.type === 'student') {
             title.innerText = "🎉 恭喜幸運兒";
-            // 結果頁也顯示該學生的專屬貓咪頭像
             display.innerHTML = `
                 <img src="${data.avatar}" style="width:120px; height:120px; border-radius:50%; border:5px solid var(--monopoly-blue); margin-bottom:10px;">
                 <div class="result-name">${data.name}</div>
