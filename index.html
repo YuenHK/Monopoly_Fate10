@@ -8,7 +8,8 @@
     <style>
         :root {
             --board-bg: rgba(205, 230, 208, 0.7);
-            --center-bg: rgba(251, 248, 239, 0.1); /* 修改此處為 10% 透明度 */
+            /* 將中間區域背景改為 10% 透明度 */
+            --center-bg: rgba(251, 248, 239, 0.1); 
             --border-color: #111;
             --monopoly-red: #e63946;
             --monopoly-blue: #0072bb;
@@ -113,13 +114,13 @@
         .cell.fate { background: rgba(255, 230, 230, 0.9); }
         .cell.active { border: 4px solid var(--monopoly-red); box-shadow: inset 0 0 12px var(--monopoly-red); transform: scale(1.05); z-index: 15 !important; background: #fff !important; }
         
-        /* 修改中間區域背景 */
+        /* 中間區域背景 */
         #center-area { 
             display: flex; 
 			flex-direction: column; 
 			justify-content: center; 
 			align-items: center; 
-			background: var(--center-bg); /* 已連動至 :root 的 0.1 透明度 */
+			background: var(--center-bg); 
 			border: 2px solid var(--border-color); 
 			margin: 2px; 
 			padding: 5px; 
@@ -144,9 +145,10 @@
             margin-bottom: 10px; 
             font-weight: bold; 
             min-height: 30px; 
-            background: rgba(255,255,255,0.6); /* 增加文字背景確保可讀性 */
-            padding: 2px 10px;
-            border-radius: 10px;
+            /* 增加文字底色確保在透明背景下可讀 */
+            background: rgba(255, 255, 255, 0.6);
+            padding: 5px 15px;
+            border-radius: 20px;
         }
 
         .dice-container { display: flex; gap: 8px; margin-bottom: 8px; }
