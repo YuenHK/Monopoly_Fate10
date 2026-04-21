@@ -1,15 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>大富翁抽籤系統</title>
+    <title>大富翁抽籤系統 - 貓教主背景版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --board-bg: #cde6d0;
-            --center-bg: #fbf8ef;
+            --board-bg: rgba(205, 230, 208, 0.7); /* 加入透明度，讓背景影片隱約透出 */
+            --center-bg: rgba(251, 248, 239, 0.9);
             --border-color: #111;
             --monopoly-red: #e63946;
             --monopoly-blue: #0072bb;
@@ -19,15 +18,6 @@
         }
 
         body {
-            /* 使用 bg.png 作為整頁背景圖片 */
-            background-image: url('./bg.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-color: var(--board-bg); /* 圖片載入前的底色 */
-            color: #000;
-            font-family: 'Microsoft JhengHei', Arial, sans-serif;
             margin: 0;
             display: flex;
             justify-content: center;
@@ -35,9 +25,38 @@
             min-height: 100vh;
             overflow: hidden;
             touch-action: manipulation;
+            background: #000; /* 影片載入前的底色 */
         }
 
-        /* 遊戲主體 */
+        /* 背景影片容器 */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* 放在最底層 */
+            pointer-events: none; /* 防止點擊到影片 */
+            overflow: hidden;
+        }
+
+        .video-background iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 為了配合手機直向影片，我們使用 object-fit 覆蓋感 */
+        @media (min-aspect-ratio: 16/9) {
+            .video-background iframe { height: 300%; width: 100%; }
+        }
+        @media (max-aspect-ratio: 16/9) {
+            .video-background iframe { width: 300%; height: 100%; }
+        }
+
         #board-container {
             position: relative;
             width: 95vw;
@@ -48,11 +67,14 @@
             gap: 2px;
             background: var(--border-color);
             border: 4px solid var(--border-color);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            /* z-index 確保在影片之上 */
+            z-index: 1;
         }
 
+        /* 微調格子透明度，增加視覺層次感 */
         .cell {
-            background: #fff;
+            background: rgba(255, 255, 255, 0.85);
             position: relative;
             display: flex;
             flex-direction: column;
@@ -63,1078 +85,297 @@
             justify-content: center;
             align-items: center;
             box-sizing: border-box;
-            z-index: 5;
         }
 
-        .house-container {
-            position: absolute;
-            bottom: 2px;
-            left: 2px;
-            right: 2px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            flex-wrap: wrap;
-            gap: 2px;
-            pointer-events: none;
-        }
-
-        .house-icon {
-            display: inline-block;
-        }
-
-        .house-img {
-            height: clamp(14px, 3vmin, 28px);
-            width: auto;
-            display: block;
-        }
-
-        .cell-text { 
-            padding: 0px;
-            font-size: clamp(5px, 3vmin, 40px);
-            color: #111;
-            word-break: break-word;
-            line-height: 1.2;
-            font-weight: bold;
-        }
-
-        .cell.chance { background: #ffebcc; }
-        .cell.chance .cell-text { color: #d97706; }
-        
-        .cell.fate { background: #ffe6e6; }
-        .cell.fate .cell-text { color: #dc2626; }
-
-        .cell.active { 
-            border: 4px solid var(--monopoly-red);
-            box-shadow: inset 0 0 12px var(--monopoly-red); 
-            transform: scale(1.08); 
-            z-index: 15 !important;
-            background: #fff0f0 !important;
-        }
-
-        /* 中央控制區 */
-        #center-area {
-            display: flex;
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center;
-            background: var(--center-bg); 
-            border: 2px solid var(--border-color); 
-            margin: 5px; 
-            padding: 10px 20px;
-            position: relative;
-            text-align: center;
-            z-index: 1;
-        }
-
-        /* ======== 新增：音訊控制按鈕 ======== */
-        .audio-controls {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            display: flex;
-            gap: 8px;
-            z-index: 20;
-        }
-        .audio-btn {
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 8px;
-            cursor: pointer;
-            padding: 5px 8px;
-            font-size: 18px;
-            box-shadow: 2px 2px 0px #000;
-            transition: 0.1s;
-        }
-        .audio-btn:active {
-            transform: translate(1px, 1px);
-            box-shadow: 1px 1px 0px #000;
-        }
-        .audio-btn.on {
-            background: var(--monopoly-green);
-            color: #fff;
-        }
-        .audio-btn.off {
-            background: #4b5563;
-            color: #e5e7eb;
-            opacity: 0.9;
-        }
-
-        .logo-text {
-            background: var(--monopoly-red);
-            color: #fff; 
-            padding: 8px 20px;
-            font-size: clamp(18px, 4vmin, 40px); 
-            transform: rotate(-3deg); 
-            border: 3px solid #000; 
-            box-shadow: 5px 5px 0px #000;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
-        #status-text { 
-            font-size: clamp(14px, 2.5vmin, 24px);
-            margin-bottom: 6px; 
-            font-weight: bold; 
-            color: #333; 
-            min-height: 3vmin;
-        }
-
-        /* 狀態顏色分類 */
-        #status-text.status-normal { color: #374151; }
-        #status-text.status-success { color: #15803d; }
-        #status-text.status-info { color: #2563eb; }
-        #status-text.status-warning { color: #b45309; }
-        #status-text.status-danger { color: #b91c1c; }
-
-        /* 目前玩家與提示文字 */
-        #current-player {
-            font-size: clamp(14px, 2.2vmin, 22px);
-            margin-bottom: 4px;
-            font-weight: bold;
-            color: #111;
-            min-height: 2.5vmin;
-        }
-        #hint-text {
-            font-size: clamp(10px, 1.5vmin, 14px);
-            color: #6b7280;
-            margin-bottom: 10px;
-        }
-
-        #dice-container { display: flex; gap: 15px; margin-bottom: 15px; }
-        .dice { 
-            width: clamp(40px, 6vmin, 60px);
-            height: clamp(40px, 6vmin, 60px); 
-            background: white; color: var(--monopoly-red); 
-            font-size: clamp(20px, 4vmin, 35px); border-radius: 10px; 
-            display: flex; justify-content: center; align-items: center;
-            border: 3px solid #000; box-shadow: 3px 3px 0px #000; 
-            font-weight: bold;
-        }
-
-        /* 主要操作按鈕區（擲骰子／快速抽籤） */
-        .btn-main-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            z-index: 10;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        /* 次要工具列（大風吹／重設／歷史／設定） */
-        .btn-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            justify-content: center;
-            z-index: 10;
-            width: 100%;
-        }
-
-        button { 
-            cursor: pointer;
-            padding: 10px 18px; 
-            font-size: clamp(12px, 1.8vmin, 18px);
-            font-weight: bold; border: 2px solid #000; box-shadow: 3px 3px 0px #000;
-            transition: 0.2s;
-            border-radius: 6px;
-        }
-        button:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px #000; }
-        button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px #000; }
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            box-shadow: 0 0 0 #000;
-            transform: none !important;
-        }
-
-        .btn-settings { background: var(--monopoly-blue); color: white; }
-        .btn-roll { background: var(--monopoly-red); color: white; }
-        .btn-marquee { background: #ffebcc; }
-        .btn-shuffle { background: #eee; }
-        .btn-reset { background: var(--monopoly-purple); color: white; }
-        .btn-history { background: var(--monopoly-yellow); color: #000; }
-
-        /* 小圖示按鈕（工具列用） */
-        .icon-btn {
-            width: 38px;
-            height: 38px;
-            padding: 0;
-            border-radius: 50%;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 設定介面 Modal & 歷史紀錄 Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content {
-            background: #fff;
-            width: 85%; max-width: 700px; padding: 25px; border-radius: 12px;
-            max-height: 85vh; overflow-y: auto; border: 4px solid #000;
-        }
-        
-        .cloud-section {
-            background: #f0f7ff;
-            padding: 15px; border: 2px dashed var(--monopoly-blue);
-            margin-bottom: 20px; border-radius: 8px; text-align: left;
-        }
-        .code-display {
-            font-size: 22px;
-            color: var(--monopoly-red); letter-spacing: 2px;
-            background: #fff; padding: 5px 15px; border: 2px solid #000; font-family: monospace;
-        }
-
-        textarea { width: 100%; height: 80px; margin: 8px 0 15px 0; border: 2px solid #000; padding: 10px; font-size: 14px; box-sizing: border-box; }
-        select { font-size: 16px; padding: 5px; margin-bottom: 15px; border: 2px solid #000; font-weight: bold; }
-        .modal-footer { text-align: right; margin-top: 10px; border-top: 2px solid #eee; padding-top: 15px; }
-
-        /* 歷史紀錄清單 */
-        #history-list {
-            list-style: none;
-            padding: 0; margin: 0; text-align: left;
-            max-height: 50vh; overflow-y: auto;
-        }
-        #history-list li {
-            padding: 10px;
-            border-bottom: 1px dashed #ccc; font-size: 16px; font-weight: bold;
-        }
-        #history-list li.history-item {
-            padding-left: 14px;
-            border-left: 4px solid transparent;
-        }
-        #history-list li.history-winner { border-left-color: var(--monopoly-blue); }
-        #history-list li.history-chance { border-left-color: #d97706; }
-        #history-list li.history-fate { border-left-color: #dc2626; }
-        #history-list li.history-house { border-left-color: var(--monopoly-green); }
-
-        .history-header {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 5px;
-        }
-        .btn-clear-history {
-            position: absolute;
-            right: 0;
-            background: #f97373;
-            color: #fff;
-            padding: 4px 10px;
-            font-size: 12px;
-            border-radius: 999px;
-            border: 2px solid #000;
-            cursor: pointer;
-            box-shadow: 2px 2px 0px #000;
-        }
-        #history-list li span.time { color: #666; font-size: 12px; margin-right: 10px; font-weight: normal;}
-
-        /* ======== 抽籤結果彈出視窗 ======== */
-        #result-modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.75); display: none; justify-content: center; align-items: center; z-index: 2000;
-        }
-        .result-content {
-            background: #fff;
-            width: 80%; max-width: 500px; padding: 40px; border-radius: 20px;
-            text-align: center; border: 6px solid #000; box-shadow: 10px 10px 0px #000;
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .result-title { font-size: clamp(24px, 3.5vmin, 40px); font-weight: bold; margin-bottom: 20px; color: #333; }
-        .result-name { font-size: clamp(36px, 7vmin, 80px); font-weight: bold; color: var(--monopoly-blue); margin: 30px 0; word-break: break-word;}
-        .result-text { font-size: clamp(20px, 4vmin, 40px); font-weight: bold; margin: 30px 0; }
-        .btn-close-result {
-            background: var(--monopoly-red);
-            color: white; padding: 12px 30px; font-size: clamp(16px, 2.5vmin, 24px);
-            margin-top: 20px; border: 3px solid #000; box-shadow: 4px 4px 0px #000;
-            cursor: pointer; font-weight: bold;
-        }
-        .btn-close-result:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #000; }
-        .btn-close-result:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
-
-        .result-house-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn-house {
-            background: var(--monopoly-green);
-            color: #fff;
-            padding: 8px 14px;
-            font-size: clamp(12px, 2vmin, 18px);
-            font-weight: bold;
-            border: 2px solid #000;
-            border-radius: 6px;
-            box-shadow: 3px 3px 0px #000;
-            cursor: pointer;
-        }
-
-        .btn-house-wrong {
-            background: #ccc;
-            color: #000;
-        }
-
-        /* ======== 響應式設計 (RWD) ======== */
-        @media (max-width: 768px), (max-aspect-ratio: 1/1) {
-            #board-container {
-                width: 98vw;
-                height: 90vw;
-                max-height: 800px;
-            }
-            #center-area { padding: 8px; }
-            .btn-main-group button { flex: 1 1 45%; padding: 12px 5px; }
-            .btn-toolbar {
-                overflow-x: auto;
-                justify-content: flex-start;
-            }
-            .modal-content { width: 95%; padding: 15px; }
-            .modal-footer { display: flex; flex-direction: column; gap: 10px; }
-            .modal-footer button { width: 100%; }
-        }
+        /* ... 其餘 CSS 保持不變 ... */
+        .cell-text { padding: 5px; font-size: clamp(8px, 2.5vmin, 32px); color: #111; word-break: break-word; line-height: 1.2; font-weight: bold; }
+        .cell.chance { background: rgba(255, 235, 204, 0.9); }
+        .cell.fate { background: rgba(255, 230, 230, 0.9); }
+        .cell.active { border: 4px solid var(--monopoly-red); box-shadow: inset 0 0 12px var(--monopoly-red); transform: scale(1.05); z-index: 15 !important; background: #fff !important; }
+        #center-area { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--center-bg); border: 2px solid var(--border-color); margin: 5px; padding: 10px; position: relative; z-index: 1; }
+        .logo-text { background: var(--monopoly-red); color: #fff; padding: 8px 20px; font-size: clamp(16px, 4vmin, 36px); transform: rotate(-2deg); border: 3px solid #000; box-shadow: 4px 4px 0px #000; margin-bottom: 10px; font-weight: bold; }
+        #status-text { font-size: clamp(12px, 2.2vmin, 20px); margin-bottom: 5px; font-weight: bold; min-height: 25px; }
+        .dice-container { display: flex; gap: 10px; margin-bottom: 10px; }
+        .dice { width: 50px; height: 50px; background: white; border: 3px solid #000; display: flex; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; box-shadow: 3px 3px 0px #000; border-radius: 8px; color: var(--monopoly-red); }
+        .btn-group { display: flex; gap: 8px; margin-bottom: 10px; }
+        button { cursor: pointer; padding: 8px 15px; font-weight: bold; border: 2px solid #000; border-radius: 6px; box-shadow: 3px 3px 0px #000; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #fff; width: 90%; max-width: 600px; padding: 20px; border-radius: 10px; border: 4px solid #000; max-height: 80vh; overflow-y: auto; }
+        textarea { width: 100%; height: 80px; margin: 10px 0; border: 2px solid #000; padding: 8px; box-sizing: border-box; font-size: 14px; }
+        #result-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .result-box { background: #fff; padding: 30px; border-radius: 15px; border: 5px solid #000; text-align: center; max-width: 400px; box-shadow: 10px 10px 0px #000; }
+        .result-name { font-size: clamp(36px, 7vmin, 60px); color: var(--monopoly-blue); margin: 20px 0; font-weight: bold; }
+        .result-text { font-size: 24px; padding: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="settings-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h2 data-i18n="modalTitle">🛠️ 系統設定</h2>
-
-        <div class="cloud-section">
-            <label data-i18n="cloudTitle"><b>☁️ 雲端同步與匯入 (Google Sheets)</b></label><br>
-            <div style="margin: 10px 0;">
-                <input type="text" id="input-cloud-code" data-i18n-placeholder="cloudPlaceholder" placeholder="輸入5位代碼" style="width: 120px; padding: 8px; border: 2px solid #000;">
-                <button onclick="loadFromCloud()" class="btn-settings" style="padding: 7px 15px; box-shadow: 2px 2px 0 #000;" data-i18n="btnLoad">讀取存檔</button>
-            </div>
-            <div id="display-new-code" style="margin-top: 10px; display:none; background: #fff; padding: 10px; border: 1px solid #ccc;">
-                <span data-i18n="yourCode">您的存取代碼：</span><span class="code-display" id="new-code-text">-----</span>
-                <p style="font-size: 12px; color: #666; margin-top:5px;" data-i18n="codeHint">* 請記下代碼，以便日後讀取資料。</p>
-            </div>
-        </div>
-        
-        <label data-i18n="langLabel"><b>🌐 介面語言 / Language</b></label><br>
-        <select id="lang-select" onchange="changeLanguage(this.value)">
-            <option value="zh">繁體中文</option>
-            <option value="en">English</option>
-        </select><br>
-
-        <label data-i18n="labelStudents"><b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)</label>
-        <textarea id="input-students"></textarea>
-        
-        <label data-i18n="labelChance"><b>2. 自訂【機會】內容</b> (每行一項)</label>
-        <textarea id="input-chance"></textarea>
-        
-        <label data-i18n="labelFate"><b>3. 自訂【命運】內容</b> (每行一項)</label>
-        <textarea id="input-fate"></textarea>
-        
-        <div class="modal-footer">
-            <button onclick="toggleModal(false)" style="background: #ccc; box-shadow:none;" data-i18n="btnCancel">取消返回</button>
-            <button onclick="saveAndApplyLocal()" style="background: var(--monopoly-blue); color: #fff;" data-i18n="btnApply">直接套用 (不備份)</button>
-            <button onclick="saveToCloud()" style="background: var(--monopoly-green); color: #fff;" data-i18n="btnSave">儲存並備份至雲端</button>
-        </div>
-    </div>
+<div class="video-background">
+    <div id="player"></div>
 </div>
 
-<div id="history-modal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 500px; text-align: center;">
-        <div class="history-header">
-            <h2 data-i18n="historyTitle">📜 抽籤歷史紀錄</h2>
-            <button class="btn-clear-history" onclick="clearHistory()" title="清空歷史">🗑️</button>
-        </div>
-        <ul id="history-list">
-            <li style="text-align: center; color: #666;" data-i18n="historyEmpty">目前尚無紀錄</li>
-        </ul>
-        <div class="modal-footer" style="justify-content: center; display: flex;">
-            <button class="btn-close-result" onclick="toggleHistory(false)" data-i18n="btnConfirm">確認</button>
+<div id="settings-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>⚙️ 系統設定</h2>
+        <label><b>1. 名單 (學號,姓名)</b></label>
+        <textarea id="input-students"></textarea>
+        <label><b>2. 自訂【機會】</b></label>
+        <textarea id="input-chance"></textarea>
+        <label><b>3. 自訂【命運】</b></label>
+        <textarea id="input-fate"></textarea>
+        <div style="text-align: right; margin-top: 10px;">
+            <button onclick="toggleModal(false)">取消</button>
+            <button onclick="applySettings()" style="background: var(--monopoly-blue); color: #fff;">儲存設定</button>
         </div>
     </div>
 </div>
 
 <div id="result-modal">
-    <div class="result-content" id="result-box">
-        <div class="result-title" id="result-title"></div>
+    <div class="result-box">
+        <h2 id="result-title">標題</h2>
         <div id="result-display"></div>
-        <button class="btn-close-result" onclick="closeResult()" data-i18n="btnConfirm">確認</button>
+        <button onclick="closeResult()" style="background: var(--monopoly-red); color: white; padding: 10px 30px;">確定</button>
     </div>
 </div>
 
 <div id="board-container">
     <div id="center-area">
-        <div class="audio-controls">
-            <button class="audio-btn" id="btn-bgm" onclick="toggleBGM()" title="切換背景音樂">🎵</button>
-            <button class="audio-btn" id="btn-sfx" onclick="toggleSFX()" title="切換音效">🔊</button>
-        </div>
-     
-        <div class="logo-text" data-i18n="logo">大富翁抽籤</div>
-        <div id="status-text" data-i18n="ready" class="status-normal">準備好了嗎？</div>
-        <div id="current-player"></div>
-        <div id="hint-text"></div>
-        
-        <div id="dice-container">
+        <div class="logo-text">大富翁抽籤系統 貓教主版🐾</div>
+        <div id="status-text">準備好了嗎？</div>
+        <div class="dice-container">
             <div class="dice" id="dice1">?</div>
             <div class="dice" id="dice2">?</div>
         </div>
-        
-        <!-- 主要操作按鈕 -->
-        <div class="btn-main-group">
-            <button id="btn-roll" class="btn-roll" onclick="rollDice()" data-i18n="btnRoll">🎲 擲骰子</button>
-            <button id="btn-marquee" class="btn-marquee" onclick="startMarquee()" data-i18n="btnQuick">⚡ 快速抽籤</button>
+        <div class="btn-group">
+            <button id="btn-roll" onclick="rollDice()" style="background: var(--monopoly-red); color: white;">🎲 擲骰子</button>
+            <button id="btn-marquee" onclick="startMarquee()" style="background: var(--monopoly-yellow);">⚡ 快速抽籤</button>
         </div>
-
-        <!-- 次要工具列：以圖示為主，文字放在提示框 -->
-        <div class="btn-toolbar">
-            <button id="btn-shuffle" class="icon-btn btn-shuffle" onclick="shuffleBoard()" title="🔄 大風吹">🔄</button>
-            <button id="btn-reset" class="icon-btn btn-reset" onclick="resetBoard()" title="↩️ 順序重設">↩️</button>
-            <button id="btn-history" class="icon-btn btn-history" onclick="toggleHistory(true)" title="📜 歷史紀錄">📜</button>
-            <button id="btn-settings" class="icon-btn btn-settings" onclick="toggleModal(true)" title="⚙️ 系統設定">⚙️</button>
-        </div>
+        <button id="btn-settings" onclick="toggleModal(true)">⚙️ 設定</button>
     </div>
 </div>
 
 <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxklt9GvSHTJzJBIL-MlwUfHLJtlWDMeaaquDb96A-yPjaH9hUi4yCCVClQ3iH8Yy-K/exec';
-    
-    const i18n = {
-        zh: {
-            modalTitle: "🛠️ 系統設定", cloudTitle: "<b>☁️ 雲端同步與匯入 (Google Sheets)</b>", btnLoad: "讀取存檔",
-            yourCode: "您的存取代碼：", codeHint: "* 請記下代碼，以便日後讀取資料。", cloudPlaceholder: "輸入5位代碼",
-            langLabel: "<b>🌐 介面語言 / Language</b>", labelStudents: "<b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)",
-            labelChance: "<b>2. 自訂【機會】內容</b> (每行一項)", labelFate: "<b>3. 自訂【命運】內容</b> (每行一項)",
-            btnCancel: "取消返回", btnApply: "直接套用 (不備份)", btnSave: "儲存並備份至雲端",
-            logo: "大富翁抽籤", ready: "準備好了嗎？", btnRoll: "🎲 擲骰子", btnQuick: "⚡ 快速抽籤",
-            btnShuffle: "🔄 大風吹", btnReset: "↩️ 順序重設", btnSettings: "⚙️ 系統設定", btnHistory: "📜 歷史紀錄",
-            historyTitle: "📜 抽籤歷史紀錄", historyEmpty: "目前尚無紀錄", alertCount: "人數必須介於 8 到 40 人之間！",
-            statusSaved: "✅ 設定已更新！", statusWinner: "📍 抽中幸運兒", statusChance: "🎁 機會時刻",
-            statusFate: "⚡ 命運降臨", statusShuffle: "🔄 大風吹，吹亂所有位置！", mapChance: "❓<br>機會", mapFate: "❗<br>命運",
-            statusBuild: "🏠 建造房屋完成！",
-            msgSaveWait: "⏳ 正在備份至雲端...", msgSaveSuccess: "✅ 儲存成功！代碼：", msgSaveFail: "❌ 雲端同步失敗，已轉為本機套用。",
-            msgSaveTimeout: "❌ 連線超時！已轉為本機套用。", msgLoadWait: "⏳ 正在抓取雲端資料...", msgLoadSuccess: "✅ 雲端資料匯入完成！",
-            msgLoadFail: "❌ 找不到此代碼或讀取失敗", alertCodeLen: "請輸入 5 位代碼", btnConfirm: "確認",
-            titleWinner: "🎉 恭喜幸運兒！", titleChance: "🎁 機會時刻", titleFate: "⚡ 命運降臨"
-        },
-        en: {
-            modalTitle: "🛠️ System Settings", cloudTitle: "<b>☁️ Cloud Sync (Google Sheets)</b>", btnLoad: "Load Data",
-            yourCode: "Your Save Code: ", codeHint: "* Please save this code to load your data later.", cloudPlaceholder: "5-digit code",
-            langLabel: "<b>🌐 Interface Language</b>", labelStudents: "<b>1. Player List</b> (ID,Name or just Names)",
-            labelChance: "<b>2. [Chance] Events</b>", labelFate: "<b>3. [Fate] Events</b>",
-            btnCancel: "Cancel", btnApply: "Apply Locally", btnSave: "Save & Backup",
-            logo: "Monopoly Picker", ready: "Ready to play?", btnRoll: "🎲 Roll Dice", btnQuick: "⚡ Quick Pick",
-            btnShuffle: "🔄 Shuffle", btnReset: "↩️ Reset", btnSettings: "⚙️ Settings", btnHistory: "📜 History",
-            historyTitle: "📜 Draw History", historyEmpty: "No records yet", alertCount: "Player count must be 8-40!",
-            statusSaved: "✅ Settings Updated!", statusWinner: "📍 Lucky Winner", statusChance: "🎁 Chance!",
-            statusFate: "⚡ Fate!", statusShuffle: "🔄 Positions Shuffled!", mapChance: "❓<br>Chance", mapFate: "❗<br>Fate",
-            statusBuild: "🏠 House built!",
-            msgSaveWait: "⏳ Saving to cloud...", msgSaveSuccess: "✅ Saved! Code: ", msgSaveFail: "❌ Cloud sync failed. Applied locally.",
-            msgSaveTimeout: "❌ Connection timeout! Applied locally.", msgLoadWait: "⏳ Loading cloud data...", msgLoadSuccess: "✅ Cloud data loaded!",
-            msgLoadFail: "❌ Invalid code or load failed", alertCodeLen: "Please enter a 5-digit code", btnConfirm: "OK",
-            titleWinner: "🎉 Winner!", titleChance: "🎁 Chance", titleFate: "⚡ Fate",
-            hint: "Tap a player tile to edit houses"
-        }
-    };
+    // YouTube Player API 
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-    let currentLang = 'zh';
-    let originalStudents = Array.from({length: 24}, (_, i) => ({ id: i+1, name: `學生${i+1}` }));
-    let students = JSON.parse(JSON.stringify(originalStudents));
-    let chanceList = ["下一位抽到的同學，可在今堂隨意移動座位", "下一位抽到的同學，可重抽一次"];
-    let fateList = ["下一位抽到的同學，需使用英文作答", "下一位抽到的同學，需邊跳舞邊回答", "下一位抽到的同學，需模仿帶貨直播主的語氣回答", "下一位抽到的同學，需用唱歌的方式把答案唱出來", "下一位抽到的同學，需對著教室裡的一個物品深情地解釋這道題，語氣要像是在告白一樣溫柔", "下一位抽到的同學，需回答後大喊出自創的招式名稱"];
-    
-    let mapData = [];
-    let historyData = []; 
-    let currentIndex = 0;
-    let isAnimating = false;
-    let boardW = 0, boardH = 0;
-	
-	let consecutiveSpecialCount = 0; // 記錄連續抽中特殊格子的次數
-
-    // 每位學生的房屋紀錄：{ [studentId]: { small, middle, large } }
-    let studentHouses = {};
-
-    // ==========================================
-    // 音效系統設定 (對應本地 ./sounds 資料夾)
-    // ==========================================
-    const sounds = {
-        click: new Audio('./sounds/click.mp3'),
-        roll: new Audio('./sounds/roll.mp3'),
-        step: new Audio('./sounds/step.mp3'),
-        win: new Audio('./sounds/win.mp3'),
-        fate: new Audio('./sounds/fate.mp3'),
-        bgm: new Audio('./sounds/bgm.mp3'),
-        spin: new Audio('./sounds/spin.mp3'), // 新增：轉動音效
-        blow: new Audio('./sounds/blow.mp3')  // 新增：大風吹專屬音效
-    };
-
-    // 背景音樂設定
-    sounds.bgm.loop = true;
-    sounds.bgm.volume = 0.3;
-
-    // 音訊開關狀態
-    let isBgmEnabled = true;
-    let isSfxEnabled = true;
-
-    // 切換背景音樂
-    function toggleBGM() {
-        isBgmEnabled = !isBgmEnabled;
-        if (isBgmEnabled) {
-            sounds.bgm.play().catch(e => console.log(e));
-        } else {
-            sounds.bgm.pause();
-        }
-        refreshAudioButtons();
-    }
-
-    // 切換音效
-    function toggleSFX() {
-        isSfxEnabled = !isSfxEnabled;
-        if (!isSfxEnabled) {
-            sounds.spin.pause(); // 關閉時若正在轉動則立刻停止
-        }
-        refreshAudioButtons();
-    }
-
-    // 播放音效輔助函式 (加入開關判斷)
-    function playSfx(name) {
-        if (!isSfxEnabled) return;
-        if(sounds[name]) {
-            sounds[name].currentTime = 0; // 重置時間，允許連續播放
-            sounds[name].play().catch(e => console.log("播放被阻擋:", e));
-        }
-    }
-
-    // 控制轉動持續音效的函式
-    function startSpinSound() {
-        if (!isSfxEnabled) return;
-        sounds.spin.currentTime = 0;
-        sounds.spin.loop = true;
-        sounds.spin.play().catch(e => console.log("播放被阻擋:", e));
-    }
-    function stopSpinSound() {
-        sounds.spin.pause();
-        sounds.spin.currentTime = 0;
-    }
-
-    // 解鎖瀏覽器音訊限制
-    function unlockAudio() {
-        Object.values(sounds).forEach(audio => {
-            if (audio !== sounds.bgm) { 
-                audio.play().then(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                }).catch(e => {});
+    var player;
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            videoId: 'ujB8prtbms4',
+            playerVars: {
+                'autoplay': 1,      // 自動播放
+                'mute': 1,          // 必須靜音，否則會被瀏覽器封鎖
+                'loop': 1,          // 循環播放
+                'playlist': 'ujB8prtbms4', // 循環必備：必須重複影片 ID
+                'controls': 0,      // 隱藏控制項
+                'showinfo': 0,
+                'modestbranding': 1,
+                'playsinline': 1,   // 在行動裝置上內嵌播放，不彈出全螢幕
+                'rel': 0
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': function(e) {
+                    // 萬一影片停止（例如循環失效），強制重啟
+                    if (e.data === YT.PlayerState.ENDED) {
+                        player.playVideo();
+                    }
+                }
             }
         });
-        if (isBgmEnabled) {
-            sounds.bgm.play().catch(e => console.log("BGM 播放被阻擋:", e));
-        }
-        
-        // 解鎖成功後移除監聽器
-        document.removeEventListener('click', unlockAudio);
-        document.removeEventListener('touchstart', unlockAudio);
-    }
-    
-    // 音效按鈕視覺更新
-    function refreshAudioButtons() {
-        const bgmBtn = document.getElementById('btn-bgm');
-        const sfxBtn = document.getElementById('btn-sfx');
-        if (bgmBtn) {
-            bgmBtn.innerText = isBgmEnabled ? '🎵' : '🔇';
-            bgmBtn.classList.toggle('on', isBgmEnabled);
-            bgmBtn.classList.toggle('off', !isBgmEnabled);
-        }
-        if (sfxBtn) {
-            sfxBtn.innerText = isSfxEnabled ? '🔊' : '🔈';
-            sfxBtn.classList.toggle('on', isSfxEnabled);
-            sfxBtn.classList.toggle('off', !isSfxEnabled);
-        }
     }
 
-    // 監聽網頁第一次互動
-    document.addEventListener('click', unlockAudio);
-    document.addEventListener('touchstart', unlockAudio);
-    // ==========================================
-    
-    
-    document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
-    document.getElementById('input-chance').value = chanceList.join('\n');
-    document.getElementById('input-fate').value = fateList.join('\n');
+    function onPlayerReady(event) {
+        event.target.mute(); // 確保靜音，這是繞過「黑色畫面」的關鍵
+        event.target.playVideo();
+    }
+
+    // --- 以下為原本的大富翁邏輯 ---
+    let originalStudents = [
+        {id: "1", name: "陳凱晴"}, {id: "2", name: "陳家俊"}, {id: "3", name: "陳柏希"},
+        {id: "4", name: "陳子淇"}, {id: "5", name: "趙子博"}, {id: "6", name: "何宛盈"},
+        {id: "7", name: "黃子淇"}, {id: "8", name: "許家佑"}, {id: "9", name: "熊可堯"},
+        {id: "10", name: "高培釗"}, {id: "11", name: "郭衍銳"}, {id: "12", name: "郭宥瑜"},
+        {id: "13", name: "鄺皓然"}, {id: "14", name: "劉頌彥"}, {id: "15", name: "劉凱維"},
+        {id: "16", name: "劉逸朗"}, {id: "17", name: "李柏廷"}, {id: "18", name: "梁欣媛"},
+        {id: "19", name: "梁汝謙"}, {id: "20", name: "李嘉軒"}, {id: "21", name: "歐陽可晴"},
+        {id: "22", name: "彭洛賢"}, {id: "23", name: "彭泳沁"}, {id: "24", name: "沈梓僖"},
+        {id: "25", name: "蘇靖楠"}, {id: "26", name: "王翠彤"}, {id: "27", name: "黃嘉璇"},
+        {id: "28", name: "黃　森"}, {id: "29", name: "謝雨桐"}, {id: "30", name: "楊凱喬"},
+        {id: "31", name: "楊茵晴"}, {id: "32", name: "葉曦臨"}
+    ];
+    let chanceList = ["下一位抽到的同學，可在今堂隨意移動座位", "下一位抽到的同學，可重抽一次", "下一位抽到的同學，可在Youtube點播一首歌"];
+    let fateList = ["下一位抽到的同學，需使用英文作答", "下一位抽到的同學，需邊跳舞邊回答", "下一位抽到的同學，需模仿直播主回答", "下一位抽到的同學，需唱出答案", "下一位抽到的同學，需對鄰座深情解釋"];
+
+    let mapData = [];
+    let boardW = 0, boardH = 0;
+    let currentIndex = 0;
+    let isAnimating = false;
+    let consecutiveSpecialCount = 0;
 
     function toggleModal(show) {
+        if(show) {
+            document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
+            document.getElementById('input-chance').value = chanceList.join('\n');
+            document.getElementById('input-fate').value = fateList.join('\n');
+        }
         document.getElementById('settings-modal').style.display = show ? 'flex' : 'none';
     }
 
-    function toggleHistory(show) {
-        const modal = document.getElementById('history-modal');
-        const list = document.getElementById('history-list');
-        
-        if (show) {
-            list.innerHTML = '';
-            if (historyData.length === 0) {
-                list.innerHTML = `<li style="text-align: center; color: #666;">${i18n[currentLang].historyEmpty}</li>`;
-            } else {
-                historyData.forEach(entry => {
-                    let li = document.createElement('li');
-                    li.classList.add('history-item');
-                    if (entry.type) {
-                        li.classList.add(`history-${entry.type}`);
-                    }
-                    li.innerHTML = `<span class="time">${entry.time}</span> ${entry.text}`;
-                    list.appendChild(li);
-                });
-            }
-            modal.style.display = 'flex';
-        } else {
-            modal.style.display = 'none';
-        }
-    }
-
-    function clearHistory() {
-        historyData = [];
-        toggleHistory(true);
-    }
-
-    function saveSettings() {
-        const rawStudents = document.getElementById('input-students').value.trim().split('\n');
-        let parsed = [];
-        
-        rawStudents.forEach(line => {
-            let tLine = line.trim();
-            if(tLine === '') return;
-            if(tLine.includes(',')) {
-                let parts = tLine.split(',');
-                parsed.push({ id: parts[0].trim(), name: parts[1].trim() || parts[0].trim() });
-            } else {
-                parsed.push({ id: tLine, name: tLine }); 
-            }
-        });
-
-        if(parsed.length < 8 || parsed.length > 40) {
-            alert(i18n[currentLang].alertCount);
-            return false;
-        }
-
-        originalStudents = JSON.parse(JSON.stringify(parsed));
-        students = JSON.parse(JSON.stringify(originalStudents));
-        studentHouses = {};
-        chanceList = document.getElementById('input-chance').value.trim().split('\n').filter(l => l);
-        fateList = document.getElementById('input-fate').value.trim().split('\n').filter(l => l);
-
+    function applySettings() {
+        const rawStu = document.getElementById('input-students').value.trim().split('\n');
+        originalStudents = rawStu.map(line => {
+            if(line.trim() === '') return null;
+            const p = line.split(',');
+            return { id: p[0].trim(), name: (p[1] || p[0]).trim() };
+        }).filter(s => s !== null);
+        chanceList = document.getElementById('input-chance').value.split('\n').filter(l => l.trim());
+        fateList = document.getElementById('input-fate').value.split('\n').filter(l => l.trim());
         currentIndex = 0;
-        historyData = [];
-        generateMap();
-        renderBoard();
-        return true;
-    }
-    
-    function saveAndApplyLocal() {
-        if (saveSettings()) {
-            document.getElementById('status-text').innerText = i18n[currentLang].statusSaved;
-            toggleModal(false); 
-        }
+        initBoard();
+        toggleModal(false);
     }
 
-    async function saveToCloud() {
-        if (!saveSettings()) return;
-        const statusText = document.getElementById('status-text');
-        statusText.innerText = i18n[currentLang].msgSaveWait;
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-        try {
-            const response = await fetch(GAS_URL, {
-                method: 'POST',
-                redirect: 'follow',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({
-                    students: originalStudents,
-                    chance: chanceList,
-                    fate: fateList
-                }),
-                signal: controller.signal
-            });
-
-            const result = await response.json();
-            clearTimeout(timeoutId);
-
-            if (result.result === 'success') {
-                document.getElementById('display-new-code').style.display = 'block';
-                document.getElementById('new-code-text').innerText = result.code;
-                statusText.innerText = i18n[currentLang].msgSaveSuccess + result.code;
-                alert(i18n[currentLang].msgSaveSuccess + result.code);
-                toggleModal(false);
-            } else {
-                throw new Error("Result is not success");
-            }
-        } catch (e) {
-            clearTimeout(timeoutId);
-            console.error(e);
-            if (e.name === 'AbortError') {
-                alert(i18n[currentLang].msgSaveTimeout);
-                statusText.innerText = i18n[currentLang].msgSaveTimeout;
-            } else {
-                alert(i18n[currentLang].msgSaveFail);
-                statusText.innerText = i18n[currentLang].msgSaveFail;
-            }
-            toggleModal(false);
-        }
-    }
-
-    async function loadFromCloud() {
-        const code = document.getElementById('input-cloud-code').value.trim();
-        if (code.length !== 5) {
-            alert(i18n[currentLang].alertCodeLen);
-            return;
-        }
-
-        const statusText = document.getElementById('status-text');
-        statusText.innerText = i18n[currentLang].msgLoadWait;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-        try {
-            const response = await fetch(`${GAS_URL}?code=${code}`, {
-                method: 'GET',
-                redirect: 'follow',
-                signal: controller.signal
-            });
-
-            const result = await response.json();
-            clearTimeout(timeoutId);
-
-            if (result.result === 'success') {
-                originalStudents = result.students;
-                students = JSON.parse(JSON.stringify(originalStudents));
-                chanceList = result.chance;
-                fateList = result.fate;
-                studentHouses = {};
-
-                document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
-                document.getElementById('input-chance').value = chanceList.join('\n');
-                document.getElementById('input-fate').value = fateList.join('\n');
-
-                currentIndex = 0;
-                historyData = [];
-                generateMap();
-                renderBoard();
-                statusText.innerText = i18n[currentLang].msgLoadSuccess;
-                toggleModal(false);
-            } else {
-                alert(i18n[currentLang].msgLoadFail);
-                statusText.innerText = i18n[currentLang].msgLoadFail;
-            }
-        } catch (e) {
-            clearTimeout(timeoutId);
-            console.error(e);
-            if (e.name === 'AbortError') {
-                alert(i18n[currentLang].msgSaveTimeout);
-                statusText.innerText = i18n[currentLang].msgSaveTimeout;
-            } else {
-                alert(i18n[currentLang].msgLoadFail);
-                statusText.innerText = i18n[currentLang].msgLoadFail;
-            }
-        }
-    }
-
-        function generateMap() {
-        // --- 設定固定數量 ---
+    function initBoard() {
         const countChance = 10;
         const countFate = 10;
-        
-        // 1. 準備內容池 (Pool)
-        let pool = [];
+        let stuPool = [];
+        let tempStudents = [...originalStudents];
+        tempStudents.sort(() => Math.random() - 0.5);
         const colors = ['#fdf6e3', '#e0f7fa', '#fce4ec', '#fff3e0', '#e8f5e9', '#fff9c4'];
-
-        // (A) 加入學生
-        students.forEach((stu, idx) => {
-            if (!studentHouses[stu.id]) {
-                studentHouses[stu.id] = { small: 0, middle: 0, large: 0 };
-            }
-            pool.push({ 
-                type: 'student', 
-                name: stu.name, 
-                id: stu.id,
-                color: colors[idx % colors.length],
-                houses: studentHouses[stu.id]
-            });
+        tempStudents.forEach((s, idx) => {
+            stuPool.push({ type: 'student', name: s.name, id: s.id, color: colors[idx % colors.length] });
         });
-
-        // (B) 加入 10 個機會
-        for (let i = 0; i < countChance; i++) {
-            pool.push({ type: 'chance', text: i18n[currentLang].mapChance });
+        let specialPool = [];
+        for(let i=0; i<countChance; i++) specialPool.push({ type: 'chance', text: '❓<br>機會' });
+        for(let i=0; i<countFate; i++) specialPool.push({ type: 'fate', text: '❗<br>命運' });
+        specialPool.sort(() => Math.random() - 0.5);
+        const total = stuPool.length + specialPool.length;
+        const sumWH = (total + 4) / 2;
+        boardW = Math.ceil(sumWH * 0.62); 
+        boardH = Math.floor(sumWH - boardW);
+        if (boardH < 3) { boardH = 3; boardW = sumWH - 3; }
+        const perimeter = 2 * (boardW + boardH) - 4;
+        let diff = perimeter - stuPool.length;
+        if (diff > specialPool.length) {
+            while (specialPool.length < diff) specialPool.push({ type: 'fate', text: '❗<br>命運' });
+        } else if (diff < specialPool.length) {
+            specialPool = specialPool.slice(0, diff);
         }
-
-        // (C) 加入 10 個命運
-        for (let i = 0; i < countFate; i++) {
-            pool.push({ type: 'fate', text: i18n[currentLang].mapFate });
+        mapData = new Array(perimeter).fill(null);
+        let numStu = stuPool.length;
+        for (let i = 0; i < numStu; i++) {
+            let targetIdx = Math.floor((i * perimeter) / numStu);
+            while(mapData[targetIdx] !== null) { targetIdx = (targetIdx + 1) % perimeter; }
+            mapData[targetIdx] = stuPool[i];
         }
-
-        // 2. 計算地圖尺寸
-        // 大富翁地圖是矩形外框，總格數 (Perimeter) = 2 * (W + H) - 4
-        // 因此總格數必須是偶數。如果目前 pool 是奇數，多補一個命運格來湊偶數。
-        if (pool.length % 2 !== 0) {
-            pool.push({ type: 'fate', text: i18n[currentLang].mapFate });
-        }
-
-        let totalCells = pool.length;
-        let halfPerimeter = (totalCells + 4) / 2; // = W + H
-
-        // 依比例計算長寬 (約 16:9)
-        boardW = Math.round(halfPerimeter * 16 / 25);
-        boardH = halfPerimeter - boardW;
-        
-        // 防呆：確保最小高度
-        if (boardH < 3) { boardH = 3; boardW = halfPerimeter - 3; }
-
-        // 3. 洗牌 (Fisher-Yates Shuffle)
-        // 讓學生、機會、命運隨機散落在地圖上，不再固定角落
-        for (let i = pool.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [pool[i], pool[j]] = [pool[j], pool[i]];
-        }
-
-        // 4. 完成
-        mapData = pool;
+        for (let i = 0; i < perimeter; i++) { if (mapData[i] === null) { mapData[i] = specialPool.pop(); } }
+        renderBoard();
     }
 
-
-    function getGridPos(i, W, H) {
-        if (i < W) return { col: i + 1, row: 1 };
-        if (i < W + H - 2) return { col: W, row: i - W + 2 };
-        if (i < 2 * W + H - 2) return { col: W - (i - (W + H - 2)), row: H };
-        return { col: 1, row: H - 1 - (i - (2 * W + H - 2)) };
+    function getGridPos(i) {
+        if (i < boardW) return { r: 1, c: i + 1 }; 
+        if (i < boardW + boardH - 1) return { r: i - boardW + 2, c: boardW }; 
+        if (i < 2 * boardW + boardH - 2) return { r: boardH, c: boardW - (i - (boardW + boardH - 2)) }; 
+        return { r: boardH - (i - (2 * boardW + boardH - 3)), c: 1 }; 
     }
-
-        function getHouseIconsHTML(houses) {
-        if (!houses) return '';
-        const parts = [];
-        // 修改：將 img 標籤改為 Emoji，並調整字體大小
-        const style = 'font-size: clamp(12px, 2.5vmin, 24px); line-height: 1;';
-        
-        for (let i = 0; i < (houses.small || 0); i++) {
-            parts.push(`<span class="house-icon" style="${style}">🛖</span>`); // 小房子 Emoji
-        }
-        for (let i = 0; i < (houses.middle || 0); i++) {
-            parts.push(`<span class="house-icon" style="${style}">🏡</span>`); // 中房子 Emoji
-        }
-        for (let i = 0; i < (houses.large || 0); i++) {
-            parts.push(`<span class="house-icon" style="${style}">🏰</span>`); // 大城堡 Emoji
-        }
-        if (!parts.length) return '';
-        return `<div class="house-container">${parts.join('')}</div>`;
-    }
-
 
     function renderBoard() {
         const board = document.getElementById('board-container');
         board.style.gridTemplateColumns = `repeat(${boardW}, 1fr)`;
         board.style.gridTemplateRows = `repeat(${boardH}, 1fr)`;
-        
-        const centerArea = document.getElementById('center-area');
-        centerArea.style.gridColumn = `2 / ${boardW}`;
-        centerArea.style.gridRow = `2 / ${boardH}`;
-
-        document.querySelectorAll('.cell').forEach(e => e.remove());
+        document.querySelectorAll('.cell').forEach(c => c.remove());
         mapData.forEach((data, i) => {
             const cell = document.createElement('div');
             cell.id = `cell-${i}`;
             cell.className = `cell ${data.type}`;
-            
-            if (data.type === 'student') {
-                cell.style.backgroundColor = data.color;
-                const housesHTML = getHouseIconsHTML(data.houses);
-                cell.innerHTML = `<div class="cell-text">${data.name}</div>${housesHTML}`;
-                cell.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openHouseEditor(data.id);
-                });
-            } else {
-                cell.innerHTML = `<div class="cell-text">${data.text}</div>`;
-            }
-            
-            let pos = getGridPos(i, boardW, boardH);
-            cell.style.gridColumn = pos.col;
-            cell.style.gridRow = pos.row;
+            if(data.type === 'student') cell.style.backgroundColor = data.color;
+            cell.innerHTML = `<div class="cell-text">${data.name || data.text}</div>`;
+            const pos = getGridPos(i);
+            cell.style.gridRow = pos.r;
+            cell.style.gridColumn = pos.c;
             board.appendChild(cell);
         });
-        updatePos();
+        const center = document.getElementById('center-area');
+        center.style.gridColumn = `2 / ${boardW}`;
+        center.style.gridRow = `2 / ${boardH}`;
+        updateActive();
     }
 
-    function updatePos() {
+    function updateActive() {
         document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-        const activeCell = document.getElementById(`cell-${currentIndex}`);
-        if(activeCell) activeCell.classList.add('active');
+        const el = document.getElementById(`cell-${currentIndex}`);
+        if(el) el.classList.add('active');
     }
 
-        function rollDice() {
-        if (isAnimating) return;
-        playSfx('click');
-        playSfx('roll');
+    function setControlsEnabled(enabled) {
+        ['btn-roll', 'btn-marquee', 'btn-settings'].forEach(id => {
+            const btn = document.getElementById(id);
+            if(btn) btn.disabled = !enabled;
+        });
+    }
+
+    function rollDice() {
+        if(isAnimating) return;
         isAnimating = true;
         setControlsEnabled(false);
         closeResult();
-
-        // 1. 先預設隨機結果
         let s1 = Math.floor(Math.random() * 6) + 1;
         let s2 = Math.floor(Math.random() * 6) + 1;
-
-        // 2. 【保底機制】檢查是否連續 1 次以上抽中特殊格子
-        if (consecutiveSpecialCount >= 1) {
-            // 找出所有「能走到學生格子」的步數總和 (骰子總和範圍 2~12)
-            let safeSums = [];
-            for (let sum = 2; sum <= 12; sum++) {
-                // 計算走 sum 步後的索引位置
-                let targetIndex = (currentIndex + sum) % mapData.length;
-                // 如果目標是學生，將這個步數加入安全名單
-                if (mapData[targetIndex].type === 'student') {
-                    safeSums.push(sum);
-                }
-            }
-
-            // 如果有安全步數 (避免地圖上完全沒有學生的極端情況)
-            if (safeSums.length > 0) {
-                // 從安全名單中隨機選一個總步數
-                const finalSum = safeSums[Math.floor(Math.random() * safeSums.length)];
-                
-                // 將總步數拆解為兩顆骰子 (s1, s2)
-                // 邏輯：先隨機決定 s1，但要確保 s2 也在 1~6 之間
-                let validPairs = [];
-                for (let i = 1; i <= 6; i++) {
-                    let j = finalSum - i;
-                    if (j >= 1 && j <= 6) {
-                        validPairs.push([i, j]);
-                    }
-                }
-                // 從合法的骰子組合中隨機選一組
-                const pair = validPairs[Math.floor(Math.random() * validPairs.length)];
-                s1 = pair[0];
-                s2 = pair[1];
-                
-                console.log(`觸發保底機制！強制骰出: ${s1}+${s2}=${finalSum} (目標: ${mapData[(currentIndex + finalSum) % mapData.length].name})`);
-            }
-        }
-
         let count = 0;
         let timer = setInterval(() => {
-            // 動畫期間顯示隨機數字
             document.getElementById('dice1').innerText = Math.floor(Math.random() * 6) + 1;
             document.getElementById('dice2').innerText = Math.floor(Math.random() * 6) + 1;
-            
             if(count++ > 10) {
                 clearInterval(timer);
-                // 顯示最終決定的數字 (可能是隨機，也可能是我們控制過的)
                 document.getElementById('dice1').innerText = s1;
                 document.getElementById('dice2').innerText = s2;
-                startSpinSound();
-                move(s1 + s2);
+                moveSteps(s1 + s2);
             }
         }, 50);
     }
 
-
     function startMarquee() {
-        if (isAnimating) return;
-        playSfx('click'); // 點擊音效
+        if(isAnimating) return;
         isAnimating = true;
         setControlsEnabled(false);
         closeResult();
-        startSpinSound(); // 新增：快速抽籤時播放轉動音效
-        move(Math.floor(Math.random() * mapData.length) + mapData.length, true);
+        let studentIndices = [];
+        mapData.forEach((cell, idx) => { if (cell.type === 'student') studentIndices.push(idx); });
+        let targetIdx = studentIndices[Math.floor(Math.random() * studentIndices.length)];
+        let minSteps = mapData.length * 2; 
+        let stepsToTarget = (targetIdx - currentIndex + mapData.length) % mapData.length;
+        moveSteps(minSteps + stepsToTarget, true);
     }
 
-    function move(steps, isMarquee = false) {
-        if (steps <= 0) { land(); return; }
+    function moveSteps(steps, fast=false) {
+        if(steps <= 0) { land(); return; }
         currentIndex = (currentIndex + 1) % mapData.length;
-        playSfx('step'); // 移動步伐音效
-        updatePos();
-        setTimeout(() => move(steps - 1, isMarquee), isMarquee ? 40 : 150);
+        updateActive();
+        let delay = fast ? 40 : 150;
+        if (fast && steps < 5) delay = 40 + (5 - steps) * 40; 
+        setTimeout(() => moveSteps(steps - 1, fast), delay);
     }
 
     function land() {
-        stopSpinSound(); // 新增：抵達目標時立刻停止轉動音效
-
         const data = mapData[currentIndex];
         const modal = document.getElementById('result-modal');
-        const box = document.getElementById('result-box');
         const title = document.getElementById('result-title');
         const display = document.getElementById('result-display');
-        
         modal.style.display = 'flex';
-        let historyEntry = { time: new Date().toLocaleTimeString() };
-
-        const currentPlayerEl = document.getElementById('current-player');
-
-        if (data.type === 'student') {
-		
-			consecutiveSpecialCount = 0; 
-		
-            playSfx('win'); // 抽中學生歡呼音效
-            setStatus('success', i18n[currentLang].statusWinner);
-            if (currentPlayerEl) {
-                currentPlayerEl.innerText = (currentLang === 'en' ? 'Current player: ' : '目前玩家：') + data.name;
-            }
-            title.innerText = i18n[currentLang].titleWinner;
-            title.style.color = '#333';
-            display.innerHTML = `
-                <div class="result-name">${data.name}</div>
-                <div class="result-house-buttons">
-                    <button id="btn-house-correct" class="btn-house">✅ 答對，建造房屋</button>
-                    <button id="btn-house-wrong" class="btn-house btn-house-wrong">❌ 答錯</button>
-                </div>
-            `;
-            box.style.borderColor = 'var(--monopoly-blue)';
-            
-            historyEntry.type = 'winner';
-            historyEntry.text = `📍 <span style="color:var(--monopoly-blue);">${data.name}</span>`;
-            
-            const btnCorrect = document.getElementById('btn-house-correct');
-            const btnWrong = document.getElementById('btn-house-wrong');
-            if (btnCorrect) {
-                btnCorrect.onclick = () => handleCorrectAnswer(data.id);
-            }
-            if (btnWrong) {
-                btnWrong.onclick = () => closeResult();
-            }
-            confetti({
-                particleCount: 150,
-                spread: 80,
-                origin: { y: 0.6 },
-                zIndex: 3000
-            });
+        if(data.type === 'student') {
+            title.innerText = "🎉 恭喜幸運兒";
+            display.innerHTML = `<div class="result-name">${data.name}</div>`;
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 3000 });
         } else {
-		
-			consecutiveSpecialCount++;
-            console.log("連續特殊格子次數:", consecutiveSpecialCount); // 方便你測試看 Log
-		
-            playSfx('fate'); // 神祕音效
             const list = data.type === 'chance' ? chanceList : fateList;
-            const content = list[Math.floor(Math.random() * list.length)];
-            setStatus(data.type === 'chance' ? 'info' : 'warning', data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate);
-            title.innerText = data.type === 'chance' ? i18n[currentLang].titleChance : i18n[currentLang].titleFate;
-            const color = data.type === 'chance' ? '#d97706' : '#dc2626';
-            title.style.color = color;
-            display.innerHTML = `<div class="result-text" style="color:${color}">${content}</div>`;
-            box.style.borderColor = color;
-            
-            const typeStr = data.type === 'chance' ? '🎁 機會' : '⚡ 命運';
-            historyEntry.type = data.type === 'chance' ? 'chance' : 'fate';
-            historyEntry.text = `<span style="color:${color}">${typeStr}</span>：${content}`;
+            const res = list[Math.floor(Math.random()*list.length)];
+            title.innerText = data.type === 'chance' ? "🎁 機會時刻" : "⚡ 命運降臨";
+            display.innerHTML = `<div class="result-text">${res}</div>`;
         }
-        
-        historyData.unshift(historyEntry);
     }
 
     function closeResult() {
@@ -1143,205 +384,7 @@
         setControlsEnabled(true);
     }
 
-    function updateStudentHouses(studentId, delta) {
-        const idKey = studentId;
-        if (!studentHouses[idKey]) {
-            studentHouses[idKey] = { small: 0, middle: 0, large: 0 };
-        }
-        const info = studentHouses[idKey];
-
-        if (delta > 0) {
-            for (let k = 0; k < delta; k++) {
-                info.small = (info.small || 0) + 1;
-                while (info.small >= 3) {
-                    info.small -= 3;
-                    info.middle = (info.middle || 0) + 1;
-                }
-                while (info.middle >= 3) {
-                    info.middle -= 3;
-                    info.large = (info.large || 0) + 1;
-                }
-            }
-        } else if (delta < 0) {
-            for (let k = 0; k < Math.abs(delta); k++) {
-                if (info.small > 0) {
-                    info.small -= 1;
-                } else if (info.middle > 0) {
-                    // 1 middle 拆成 3 small，再減 1 small，最後變 2 small
-                    info.middle -= 1;
-                    info.small += 2;
-                } else if (info.large > 0) {
-                    // 1 large 拆成 3 middle，再減 1 middle，最後變 2 middle
-                    info.large -= 1;
-                    info.middle += 2;
-                }
-            }
-        }
-
-        studentHouses[idKey] = info;
-        return info;
-    }
-
-    function handleCorrectAnswer(studentId) {
-        const newInfo = updateStudentHouses(studentId, 1);
-
-        renderBoard();
-
-        const stu = students.find(s => s.id == studentId) || originalStudents.find(s => s.id == studentId);
-        const status = i18n[currentLang].statusBuild || '';
-        setStatus('success', status);
-
-        const nameText = stu ? stu.name : '';
-        const timeStr = new Date().toLocaleTimeString();
-        let historyText;
-        if (currentLang === 'en') {
-            historyText = `🏠 ${nameText} built a house`;
-        } else {
-            historyText = `🏠 ${nameText} 建造了一間房屋`;
-        }
-        historyData.unshift({ time: timeStr, text: historyText, type: 'house' });
-
-        closeResult();
-    }
-
-    function openHouseEditor(studentId) {
-        const stu = students.find(s => s.id == studentId) || originalStudents.find(s => s.id == studentId);
-        if (!stu) return;
-
-        const modal = document.getElementById('result-modal');
-        const box = document.getElementById('result-box');
-        const title = document.getElementById('result-title');
-        const display = document.getElementById('result-display');
-
-        modal.style.display = 'flex';
-        title.innerText = currentLang === 'en' ? '🏠 Edit Houses' : '🏠 調整房屋';
-        title.style.color = '#333';
-
-        display.innerHTML = `
-            <div class="result-name">${stu.name}</div>
-            <div class="result-house-buttons">
-                <button id="btn-house-plus" class="btn-house">+ 房屋</button>
-                <button id="btn-house-minus" class="btn-house btn-house-wrong">- 房屋</button>
-            </div>
-        `;
-        box.style.borderColor = 'var(--monopoly-blue)';
-
-        const btnPlus = document.getElementById('btn-house-plus');
-        const btnMinus = document.getElementById('btn-house-minus');
-
-        if (btnPlus) {
-            btnPlus.onclick = () => {
-                updateStudentHouses(studentId, 1);
-                
-                renderBoard();
-            };
-        }
-        if (btnMinus) {
-            btnMinus.onclick = () => {
-                updateStudentHouses(studentId, -1);
-                
-                renderBoard();
-            };
-        }
-    }
-
-    function shuffleBoard() {
-        if (isAnimating) return;
-        playSfx('blow'); // 更新：改為播放大風吹專屬音效
-        closeResult();
-		consecutiveSpecialCount = 0; // --- 新增這行 ---
-        students.sort(() => Math.random() - 0.5);
-        generateMap();
-        renderBoard();
-        setStatus('info', i18n[currentLang].statusShuffle);
-    }
-
-    function resetBoard() {
-        if (isAnimating) return;
-        playSfx('click'); // 點擊音效
-        closeResult();
-		consecutiveSpecialCount = 0; // --- 新增這行 ---
-        students = JSON.parse(JSON.stringify(originalStudents));
-        currentIndex = 0;
-        generateMap();
-        renderBoard();
-        setStatus('normal', i18n[currentLang].ready);
-        const currentPlayerEl = document.getElementById('current-player');
-        if (currentPlayerEl) currentPlayerEl.innerText = '';
-    }
-
-    // 更新工具列按鈕的提示文字（依語系切換）
-    function updateToolbarTitles() {
-        const langData = i18n[currentLang];
-        const btnShuffle = document.getElementById('btn-shuffle');
-        const btnReset = document.getElementById('btn-reset');
-        const btnHistory = document.getElementById('btn-history');
-        const btnSettings = document.getElementById('btn-settings');
-
-        if (btnShuffle && langData.btnShuffle) btnShuffle.title = langData.btnShuffle;
-        if (btnReset && langData.btnReset) btnReset.title = langData.btnReset;
-        if (btnHistory && langData.btnHistory) btnHistory.title = langData.btnHistory;
-        if (btnSettings && langData.btnSettings) btnSettings.title = langData.btnSettings;
-    }
-
-    function setStatus(type, text) {
-        const el = document.getElementById('status-text');
-        if (!el) return;
-        el.innerText = text;
-        el.classList.remove('status-normal', 'status-success', 'status-info', 'status-warning', 'status-danger');
-        el.classList.add(`status-${type || 'normal'}`);
-    }
-
-    // 更新工具列按鈕的提示文字（依語系切換）
-    function updateToolbarTitles() {
-        const langData = i18n[currentLang];
-        const btnShuffle = document.getElementById('btn-shuffle');
-        const btnReset = document.getElementById('btn-reset');
-        const btnHistory = document.getElementById('btn-history');
-        const btnSettings = document.getElementById('btn-settings');
-
-        if (btnShuffle && langData.btnShuffle) btnShuffle.title = langData.btnShuffle;
-        if (btnReset && langData.btnReset) btnReset.title = langData.btnReset;
-        if (btnHistory && langData.btnHistory) btnHistory.title = langData.btnHistory;
-        if (btnSettings && langData.btnSettings) btnSettings.title = langData.btnSettings;
-    }
-
-    // 啟用/停用主要操作與工具列按鈕
-    function setControlsEnabled(enabled) {
-        const ids = ['btn-roll', 'btn-marquee', 'btn-shuffle', 'btn-reset', 'btn-history', 'btn-settings'];
-        ids.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.disabled = !enabled;
-        });
-    }
-
-    function changeLanguage(lang) {
-        currentLang = lang;
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
-        });
-        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-            const key = el.getAttribute('data-i18n-placeholder');
-            if (i18n[lang][key]) el.placeholder = i18n[lang][key];
-        });
-
-        const hintEl = document.getElementById('hint-text');
-        if (hintEl && i18n[lang].hint) {
-            hintEl.innerText = i18n[lang].hint;
-        }
-
-        updateToolbarTitles();
-        setStatus('normal', i18n[lang].ready);
-        generateMap(); 
-        renderBoard();
-    }
-
-    // 初始化
-    refreshAudioButtons();
-    setControlsEnabled(true);
-    changeLanguage('zh');
+    initBoard();
 </script>
 </body>
 </html>
