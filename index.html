@@ -8,8 +8,7 @@
     <style>
         :root {
             --board-bg: rgba(205, 230, 208, 0.7);
-            /* 將中間區域背景改為 10% 透明度 */
-            --center-bg: rgba(251, 248, 239, 0.1); 
+            --center-bg: rgba(251, 248, 239, 0.1); /* 10% 透明 */
             --border-color: #111;
             --monopoly-red: #e63946;
             --monopoly-blue: #0072bb;
@@ -29,13 +28,10 @@
             background: #000;
         }
 
-        /* 背景影片容器 */
         .video-background {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: -1;
             pointer-events: none;
             overflow: hidden;
@@ -43,143 +39,90 @@
 
         .video-background iframe {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100vw;
-            height: 100vh;
+            top: 50%; left: 50%;
+            width: 100vw; height: 100vh;
             transform: translate(-50%, -50%);
         }
 
-        @media (min-aspect-ratio: 16/9) {
-            .video-background iframe { height: 300%; width: 100%; }
-        }
-        @media (max-aspect-ratio: 16/9) {
-            .video-background iframe { width: 300%; height: 100%; }
-        }
+        @media (min-aspect-ratio: 16/9) { .video-background iframe { height: 300%; width: 100%; } }
+        @media (max-aspect-ratio: 16/9) { .video-background iframe { width: 300%; height: 100%; } }
 
         #board-container {
             width: 90vw;
-			height: 85vh; 
-			max-width: 1100px;
-			max-height: 800px;
-			margin: auto; 
-    
-			display: grid;
-			gap: 2px;
-			background: var(--border-color);
-			border: 4px solid var(--border-color);
-			box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-			z-index: 1;
+            height: 85vh; 
+            max-width: 1100px;
+            max-height: 800px;
+            margin: auto; 
+            display: grid;
+            gap: 2px;
+            /* 關鍵修改：將外層容器背景設為透明，才能看到影片 */
+            background: transparent; 
+            border: 4px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            z-index: 1;
         }
 
         .cell {
             background: rgba(255, 255, 255, 0.85);
-			position: relative;
-			display: flex;
-			flex-direction: column;
-			text-align: center;
-			font-weight: bold;
-			transition: all 0.1s;
-			overflow: hidden;
-			justify-content: center;
-			align-items: center;
-			box-sizing: border-box;
-			padding: 8px 4px;
-			min-height: 80px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.1s;
+            overflow: hidden;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 8px 4px;
+            min-height: 80px;
+            /* 為了在透明背景下保有格子邊框 */
+            outline: 1px solid var(--border-color);
         }
 
         .cat-avatar {
-            width: 3.5vmin;
-            height: 3.5vmin;
-            min-width: 25px;
-            min-height: 25px;
-            border-radius: 50%;
-            border: 2px solid #fff;
+            width: 3.5vmin; height: 3.5vmin;
+            min-width: 25px; min-height: 25px;
+            border-radius: 50%; border: 2px solid #fff;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            margin-bottom: 5px;
-            object-fit: cover;
-            background: #eee;
+            margin-bottom: 5px; object-fit: cover; background: #eee;
         }
 
         .cell-text { 
-            padding: 2px; 
-            font-size: clamp(8px, 2vmin, 24px); 
-            color: #111; 
-            word-break: break-word; 
-            line-height: 1.1; 
-            font-weight: bold; 
+            padding: 2px; font-size: clamp(8px, 2vmin, 24px); 
+            color: #111; word-break: break-word; line-height: 1.1; font-weight: bold; 
         }
 
         .cell.chance { background: rgba(255, 235, 204, 0.9); }
         .cell.fate { background: rgba(255, 230, 230, 0.9); }
-        .cell.active { border: 4px solid var(--monopoly-red); box-shadow: inset 0 0 12px var(--monopoly-red); transform: scale(1.05); z-index: 15 !important; background: #fff !important; }
+        .cell.active { border: 4px solid var(--monopoly-red); box-shadow: inset 0 0 12px var(--monopoly-red); transform: scale(1.05); z-index: 15 !important; background: #fff !important; outline: none; }
         
-        /* 中間區域背景 */
         #center-area { 
-            display: flex; 
-			flex-direction: column; 
-			justify-content: center; 
-			align-items: center; 
-			background: var(--center-bg); 
-			border: 2px solid var(--border-color); 
-			margin: 2px; 
-			padding: 5px; 
-			position: relative; 
-			z-index: 1;
+            display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; 
+            background: var(--center-bg); 
+            border: 2px solid var(--border-color); 
+            margin: 2px; padding: 5px; position: relative; z-index: 1;
         }
 
         .logo-text { 
-            background: var(--monopoly-red); 
-			color: #fff; 
-			padding: 8px 20px;
-			font-size: clamp(20px, 4vmin, 36px);
-			transform: rotate(-2deg); 
-			border: 3px solid #000; 
-			box-shadow: 4px 4px 0px #000; 
-			margin-bottom: 15px; 
-			font-weight: bold; 
+            background: var(--monopoly-red); color: #fff; 
+            padding: 8px 20px; font-size: clamp(20px, 4vmin, 36px);
+            transform: rotate(-2deg); border: 3px solid #000; 
+            box-shadow: 4px 4px 0px #000; margin-bottom: 15px; font-weight: bold; 
         }
 
         #status-text { 
             font-size: clamp(16px, 1.8vmin, 16px); 
-            margin-bottom: 10px; 
-            font-weight: bold; 
-            min-height: 30px; 
-            /* 增加文字底色確保在透明背景下可讀 */
-            background: rgba(255, 255, 255, 0.6);
-            padding: 5px 15px;
-            border-radius: 20px;
+            margin-bottom: 10px; font-weight: bold; min-height: 30px; 
+            background: rgba(255, 255, 255, 0.7); /* 提高文字可讀性 */
+            padding: 5px 15px; border-radius: 20px;
         }
 
         .dice-container { display: flex; gap: 8px; margin-bottom: 8px; }
-
-        .dice { 
-            width: 50px; 
-            height: 50px; 
-            background: white; 
-            border: 3px solid #000; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-size: 28px; 
-            font-weight: bold; 
-            box-shadow: 3px 3px 0px #000; 
-            border-radius: 6px; 
-            color: var(--monopoly-red); 
-        }
-
+        .dice { width: 50px; height: 50px; background: white; border: 3px solid #000; display: flex; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; box-shadow: 3px 3px 0px #000; border-radius: 6px; color: var(--monopoly-red); }
         .btn-group { display: flex; gap: 5px; margin-bottom: 5px; }
-
-        button { 
-            cursor: pointer; 
-            padding: 10px 20px; 
-            font-size: 18px; 
-            font-weight: bold; 
-            border: 2px solid #000; 
-            border-radius: 5px; 
-            box-shadow: 3px 3px 0px #000; 
-        }
-
+        button { cursor: pointer; padding: 10px 20px; font-size: 18px; font-weight: bold; border: 2px solid #000; border-radius: 5px; box-shadow: 3px 3px 0px #000; }
         #btn-settings { padding: 6px 12px; font-size: 14px; margin-top: 10px}
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
@@ -238,6 +181,7 @@
 </div>
 
 <script>
+    /* ... 腳本部分保持不變 ... */
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -248,30 +192,14 @@
         player = new YT.Player('player', {
             videoId: 'YgPAAgtHCts',
             playerVars: {
-                'autoplay': 1,
-                'mute': 1,
-                'loop': 1,
-                'playlist': 'YgPAAgtHCts',
-                'controls': 0,
-                'showinfo': 0,
-                'modestbranding': 1,
-                'playsinline': 1,
-                'rel': 0
+                'autoplay': 1, 'mute': 1, 'loop': 1, 'playlist': 'YgPAAgtHCts',
+                'controls': 0, 'showinfo': 0, 'modestbranding': 1, 'playsinline': 1, 'rel': 0
             },
             events: {
-                'onReady': onPlayerReady,
-                'onStateChange': function(e) {
-                    if (e.data === YT.PlayerState.ENDED) {
-                        player.playVideo();
-                    }
-                }
+                'onReady': (e) => { e.target.mute(); e.target.playVideo(); },
+                'onStateChange': (e) => { if (e.data === YT.PlayerState.ENDED) player.playVideo(); }
             }
         });
-    }
-
-    function onPlayerReady(event) {
-        event.target.mute();
-        event.target.playVideo();
     }
 
     let originalStudents = [
@@ -291,9 +219,7 @@
     let fateList = ["下一位抽到的同學，需使用英文作答", "下一位抽到的同學，需邊跳舞邊回答", "下一位抽到的同學，需模仿直播主回答", "下一位抽到的同學，需唱出答案", "下一位抽到的同學，需對鄰座深情解釋"];
 
     let mapData = [];
-    let boardW = 0, boardH = 0;
-    let currentIndex = 0;
-    let isAnimating = false;
+    let boardW = 0, boardH = 0, currentIndex = 0, isAnimating = false;
 
     function toggleModal(show) {
         if(show) {
@@ -313,52 +239,31 @@
         }).filter(s => s !== null);
         chanceList = document.getElementById('input-chance').value.split('\n').filter(l => l.trim());
         fateList = document.getElementById('input-fate').value.split('\n').filter(l => l.trim());
-        currentIndex = 0;
-        initBoard();
-        toggleModal(false);
+        currentIndex = 0; initBoard(); toggleModal(false);
     }
 
     function initBoard() {
-        const countChance = 10;
-        const countFate = 10;
+        const countChance = 10, countFate = 10;
         let stuPool = [];
         let tempStudents = [...originalStudents];
         tempStudents.sort(() => Math.random() - 0.5);
-        
         const colors = ['#fdf6e3', '#e0f7fa', '#fce4ec', '#fff3e0', '#e8f5e9', '#fff9c4'];
-        
         tempStudents.forEach((s, idx) => {
-            const randomSeed = Math.floor(Math.random() * 1000);
-            const avatarUrl = `https://cataas.com/cat/cute?width=100&height=100&unique=${randomSeed}_${idx}`;
-            
-            stuPool.push({ 
-                type: 'student', 
-                name: s.name, 
-                id: s.id, 
-                color: colors[idx % colors.length],
-                avatar: avatarUrl 
-            });
+            const avatarUrl = `https://cataas.com/cat/cute?width=100&height=100&unique=${Math.random()}_${idx}`;
+            stuPool.push({ type: 'student', name: s.name, id: s.id, color: colors[idx % colors.length], avatar: avatarUrl });
         });
-
         let specialPool = [];
         for(let i=0; i<countChance; i++) specialPool.push({ type: 'chance', text: '❓<br>機會' });
         for(let i=0; i<countFate; i++) specialPool.push({ type: 'fate', text: '❗<br>命運' });
         specialPool.sort(() => Math.random() - 0.5);
-
         const total = stuPool.length + specialPool.length;
         const sumWH = (total + 4) / 2;
-        boardW = Math.ceil(sumWH * 0.62); 
-        boardH = Math.floor(sumWH - boardW);
+        boardW = Math.ceil(sumWH * 0.62); boardH = Math.floor(sumWH - boardW);
         if (boardH < 3) { boardH = 3; boardW = sumWH - 3; }
         const perimeter = 2 * (boardW + boardH) - 4;
-        
         let diff = perimeter - stuPool.length;
-        if (diff > specialPool.length) {
-            while (specialPool.length < diff) specialPool.push({ type: 'fate', text: '❗<br>命運' });
-        } else if (diff < specialPool.length) {
-            specialPool = specialPool.slice(0, diff);
-        }
-
+        if (diff > specialPool.length) { while (specialPool.length < diff) specialPool.push({ type: 'fate', text: '❗<br>命運' }); }
+        else if (diff < specialPool.length) { specialPool = specialPool.slice(0, diff); }
         mapData = new Array(perimeter).fill(null);
         let numStu = stuPool.length;
         for (let i = 0; i < numStu; i++) {
@@ -382,29 +287,22 @@
         board.style.gridTemplateColumns = `repeat(${boardW}, 1fr)`;
         board.style.gridTemplateRows = `repeat(${boardH}, 1fr)`;
         document.querySelectorAll('.cell').forEach(c => c.remove());
-        
         mapData.forEach((data, i) => {
             const cell = document.createElement('div');
             cell.id = `cell-${i}`;
             cell.className = `cell ${data.type}`;
             if(data.type === 'student') {
-                cell.style.backgroundColor = data.color;
-                cell.innerHTML = `
-                    <img src="${data.avatar}" class="cat-avatar" alt="cat">
-                    <div class="cell-text">${data.name}</div>
-                `;
+                cell.style.backgroundColor = data.color.replace(')', ', 0.85)').replace('rgb', 'rgba');
+                cell.innerHTML = `<img src="${data.avatar}" class="cat-avatar"><div class="cell-text">${data.name}</div>`;
             } else {
                 cell.innerHTML = `<div class="cell-text">${data.text}</div>`;
             }
-            
             const pos = getGridPos(i);
-            cell.style.gridRow = pos.r;
-            cell.style.gridColumn = pos.c;
+            cell.style.gridRow = pos.r; cell.style.gridColumn = pos.c;
             board.appendChild(cell);
         });
         const center = document.getElementById('center-area');
-        center.style.gridColumn = `2 / ${boardW}`;
-        center.style.gridRow = `2 / ${boardH}`;
+        center.style.gridColumn = `2 / ${boardW}`; center.style.gridRow = `2 / ${boardH}`;
         updateActive();
     } 
 
@@ -423,72 +321,46 @@
 
     function rollDice() {
         if(isAnimating) return;
-        isAnimating = true;
-        setControlsEnabled(false);
-        closeResult();
-        let s1 = Math.floor(Math.random() * 6) + 1;
-        let s2 = Math.floor(Math.random() * 6) + 1;
-        let count = 0;
+        isAnimating = true; setControlsEnabled(false); closeResult();
+        let s1 = Math.floor(Math.random() * 6) + 1, s2 = Math.floor(Math.random() * 6) + 1, count = 0;
         let timer = setInterval(() => {
             document.getElementById('dice1').innerText = Math.floor(Math.random() * 6) + 1;
             document.getElementById('dice2').innerText = Math.floor(Math.random() * 6) + 1;
-            if(count++ > 10) {
-                clearInterval(timer);
-                document.getElementById('dice1').innerText = s1;
-                document.getElementById('dice2').innerText = s2;
-                moveSteps(s1 + s2);
-            }
+            if(count++ > 10) { clearInterval(timer); document.getElementById('dice1').innerText = s1; document.getElementById('dice2').innerText = s2; moveSteps(s1 + s2); }
         }, 50);
     }
 
     function startMarquee() {
         if(isAnimating) return;
-        isAnimating = true;
-        setControlsEnabled(false);
-        closeResult();
-        let studentIndices = [];
-        mapData.forEach((cell, idx) => { if (cell.type === 'student') studentIndices.push(idx); });
-        let targetIdx = studentIndices[Math.floor(Math.random() * studentIndices.length)];
-        let minSteps = mapData.length * 2; 
-        let stepsToTarget = (targetIdx - currentIndex + mapData.length) % mapData.length;
-        moveSteps(minSteps + stepsToTarget, true);
+        isAnimating = true; setControlsEnabled(false); closeResult();
+        let stuIdxs = []; mapData.forEach((c, idx) => { if (c.type === 'student') stuIdxs.push(idx); });
+        let targetIdx = stuIdxs[Math.floor(Math.random() * stuIdxs.length)];
+        moveSteps(mapData.length * 2 + (targetIdx - currentIndex + mapData.length) % mapData.length, true);
     }
 
     function moveSteps(steps, fast=false) {
         if(steps <= 0) { land(); return; }
         currentIndex = (currentIndex + 1) % mapData.length;
         updateActive();
-        let delay = fast ? 40 : 150;
-        if (fast && steps < 5) delay = 40 + (5 - steps) * 40; 
-        setTimeout(() => moveSteps(steps - 1, fast), delay);
+        setTimeout(() => moveSteps(steps - 1, fast), fast ? (steps < 5 ? 40 + (5 - steps) * 40 : 40) : 150);
     }
 
     function land() {
         const data = mapData[currentIndex];
-        const modal = document.getElementById('result-modal');
-        const title = document.getElementById('result-title');
-        const display = document.getElementById('result-display');
+        const modal = document.getElementById('result-modal'), title = document.getElementById('result-title'), display = document.getElementById('result-display');
         modal.style.display = 'flex';
         if(data.type === 'student') {
             title.innerText = "🎉 恭喜幸運兒";
-            display.innerHTML = `
-                <img src="${data.avatar}" style="width:120px; height:120px; border-radius:50%; border:5px solid var(--monopoly-blue); margin-bottom:10px;">
-                <div class="result-name">${data.name}</div>
-            `;
+            display.innerHTML = `<img src="${data.avatar}" style="width:120px;height:120px;border-radius:50%;border:5px solid var(--monopoly-blue);margin-bottom:10px;"><div class="result-name">${data.name}</div>`;
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 3000 });
         } else {
             const list = data.type === 'chance' ? chanceList : fateList;
-            const res = list[Math.floor(Math.random()*list.length)];
             title.innerText = data.type === 'chance' ? "🎁 機會時刻" : "⚡ 命運降臨";
-            display.innerHTML = `<div class="result-text">${res}</div>`;
+            display.innerHTML = `<div class="result-text">${list[Math.floor(Math.random()*list.length)]}</div>`;
         }
     }
 
-    function closeResult() {
-        document.getElementById('result-modal').style.display = 'none';
-        isAnimating = false;
-        setControlsEnabled(true);
-    }
+    function closeResult() { document.getElementById('result-modal').style.display = 'none'; isAnimating = false; setControlsEnabled(true); }
 
     initBoard();
 </script>
