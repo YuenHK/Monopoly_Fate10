@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>大富翁抽籤系統 - 貓貓進階版</title>
+    <title>大富翁抽籤系統 - 貓貓貓版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
@@ -23,18 +23,23 @@
             background: #000;
         }
 
+        /* 1. 背景影片佔滿全螢幕並保持覆蓋 */
         .video-background {
             position: fixed;
             top: 0; left: 0;
-            width: 100%; height: 100%;
+            width: 100vw; height: 100vh;
             z-index: -1;
             pointer-events: none;
+            overflow: hidden;
         }
 
         .video-background iframe {
             position: absolute;
             top: 50%; left: 50%;
-            width: 100vw; height: 100vh;
+            width: 100vw;
+            height: 56.25vw; /* 16:9 比例 */
+            min-height: 100vh;
+            min-width: 177.77vh; /* 確保在窄螢幕也能覆蓋 */
             transform: translate(-50%, -50%);
         }
 
@@ -91,7 +96,7 @@
             font-weight: bold; margin-bottom: 10px;
         }
 
-        .cat-avatar { width: 3.5vmin; height: 3.5vmin; min-width: 25px; border-radius: 50%; margin-bottom: 5px; }
+        .cat-avatar { width: 3.5vmin; height: 3.5vmin; min-width: 25px; border-radius: 50%; margin-bottom: 5px; object-fit: cover; }
         .cell-text { font-size: clamp(10px, 1.8vmin, 20px); text-align: center; }
         
         .cell.active { 
@@ -159,7 +164,7 @@
 
 <div id="board-container">
     <div id="center-area">
-        <div class="logo-text">大富翁抽籤系統</div>
+        <div class="logo-text">大富翁抽籤系統 - 貓貓貓版</div>
         <div id="status-text">準備好了嗎？</div>
         <div class="dice-container">
             <div class="dice" id="dice1">?</div>
@@ -179,7 +184,7 @@
     const sfx = document.getElementById('sfx');
     const sfxList = ['blow', 'click', 'fate', 'roll', 'spin', 'step', 'wim'];
     let musicStarted = false;
-    bgm.volume = 0.2; // 保持 20% 音量
+    bgm.volume = 0.2; 
 
     function triggerAction() {
         if (!musicStarted) {
@@ -209,30 +214,21 @@
     // --- 核心變數 ---
     let originalStudents = [{name:"陳凱晴"}, {name:"陳家俊"}, {name:"陳柏希"}, {name:"陳子淇"}, {name:"趙子博"}, {name:"何宛盈"}, {name:"黃子淇"}, {name:"許家佑"}, {name:"熊可堯"}, {name:"高培釗"}, {name:"郭衍銳"}, {name:"郭宥瑜"}, {name:"鄺皓然"}, {name:"劉頌彥"}, {name:"劉凱維"}, {name:"劉逸朗"}, {name:"李柏廷"}, {name:"梁欣媛"}, {name:"梁汝謙"}, {name:"李嘉軒"}, {name:"歐陽可晴"}, {name:"彭洛賢"}, {name:"彭泳沁"}, {name:"沈梓僖"}, {name:"蘇靖楠"}, {name:"王翠彤"}, {name:"黃嘉璇"}, {name:"黃　森"}, {name:"謝雨桐"}, {name:"楊凱喬"}, {name:"楊茵晴"}, {name:"葉曦臨"}];
     
-    // 更新預設清單內容
-    let chanceItems = [
-        "下一位抽到的同學，可在今堂隨意移動座位", 
-        "下一位抽到的同學，可重抽一次", 
-        "下一位抽到的同學，可點播一首歌"
-    ];
-    let fateItems = [
-        "下一位抽到的同學，需使用英文作答", 
-        "下一位抽到的同學，需邊跳舞邊回答", 
-        "下一位抽到的同學，需模仿帶貨直播主的語氣回答",
-        "下一位抽到的同學，需用唱歌的方式把答案唱出來"
-    ];
+    let chanceItems = ["下一位抽到的同學，可在今堂隨意移動座位", "下一位抽到的同學，可重抽一次", "下一位抽到的同學，可點播一首歌"];
+    let fateItems = ["下一位抽到的同學，需使用英文作答", "下一位抽到的同學，需邊跳舞邊回答", "下一位抽到的同學，需模仿帶貨直播主的語氣回答", "下一位抽到的同學，需用唱歌的方式把答案唱出來"];
     
     let mapData = [];
     let boardW = 0, boardH = 0, currentIndex = 0, isAnimating = false;
-    let nextMustBeStudent = false; // 功能：下一抽必中人名
+    let nextMustBeStudent = false; 
 
-    const blacklist = ["楊凱喬", "楊茵晴"]; // 功能：黑名單
+    const blacklist = ["楊凱喬", "楊茵晴"]; 
 
     function initBoard() {
         let stuPool = originalStudents.map((s, i) => ({
             type: 'student',
             name: s.name,
-            avatar: `https://cataas.com/cat/cute?width=100&unique=${i}_${Math.random()}`
+            // 2. 學生頭像改為貓貓動圖 (GIF)
+            avatar: `https://cataas.com/cat/gif?unique=${i}_${Math.random()}`
         }));
 
         let totalNeeded = stuPool.length + 12; 
@@ -343,9 +339,9 @@
             nextMustBeStudent = false;
             title.innerText = "🎉 恭喜幸運兒";
             display.innerHTML = `
-                <img src="${data.avatar}" style="width:120px; height:120px; border-radius:50%; border:4px solid #000; margin-bottom:10px;">
+                <img src="${data.avatar}" style="width:150px; height:150px; border-radius:15px; border:4px solid #000; margin-bottom:10px; object-fit:cover;">
                 <div style="font-size:40px; font-weight:bold; color:var(--monopoly-blue);">${data.name}</div>
-            `; // 功能：顯示貓咪頭像
+            `; 
             confetti({ zIndex: 3000 });
         } else {
             nextMustBeStudent = true;
