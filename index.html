@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>大富翁抽籤系統 - 貓教主背景版</title>
+    <title>大富翁抽籤系統 - 貓貓版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --board-bg: rgba(205, 230, 208, 0.7); /* 加入透明度，讓背景影片隱約透出 */
+            --board-bg: rgba(205, 230, 208, 0.7);
             --center-bg: rgba(251, 248, 239, 0.9);
             --border-color: #111;
             --monopoly-red: #e63946;
@@ -25,18 +25,17 @@
             min-height: 100vh;
             overflow: hidden;
             touch-action: manipulation;
-            background: #000; /* 影片載入前的底色 */
+            background: #000;
         }
 
-        /* 背景影片容器 */
         .video-background {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1; /* 放在最底層 */
-            pointer-events: none; /* 防止點擊到影片 */
+            z-index: -1;
+            pointer-events: none;
             overflow: hidden;
         }
 
@@ -49,7 +48,6 @@
             transform: translate(-50%, -50%);
         }
 
-        /* 為了配合手機直向影片，我們使用 object-fit 覆蓋感 */
         @media (min-aspect-ratio: 16/9) {
             .video-background iframe { height: 300%; width: 100%; }
         }
@@ -68,11 +66,9 @@
             background: var(--border-color);
             border: 4px solid var(--border-color);
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            /* z-index 確保在影片之上 */
             z-index: 1;
         }
 
-        /* 微調格子透明度，增加視覺層次感 */
         .cell {
             background: rgba(255, 255, 255, 0.85);
             position: relative;
@@ -87,11 +83,33 @@
             box-sizing: border-box;
         }
 
-        /* ... 其餘 CSS 保持不變 ... */
-        .cell-text { padding: 5px; font-size: clamp(8px, 2.5vmin, 32px); color: #111; word-break: break-word; line-height: 1.2; font-weight: bold; }
+        /* 貓咪頭像樣式 */
+        .cat-avatar {
+            width: 3.5vmin;
+            height: 3.5vmin;
+            min-width: 25px;
+            min-height: 25px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            margin-bottom: 5px;
+            object-fit: cover;
+            background: #eee;
+        }
+
+        .cell-text { 
+            padding: 2px; 
+            font-size: clamp(8px, 2vmin, 24px); 
+            color: #111; 
+            word-break: break-word; 
+            line-height: 1.1; 
+            font-weight: bold; 
+        }
+
         .cell.chance { background: rgba(255, 235, 204, 0.9); }
         .cell.fate { background: rgba(255, 230, 230, 0.9); }
         .cell.active { border: 4px solid var(--monopoly-red); box-shadow: inset 0 0 12px var(--monopoly-red); transform: scale(1.05); z-index: 15 !important; background: #fff !important; }
+        
         #center-area { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--center-bg); border: 2px solid var(--border-color); margin: 5px; padding: 10px; position: relative; z-index: 1; }
         .logo-text { background: var(--monopoly-red); color: #fff; padding: 8px 20px; font-size: clamp(16px, 4vmin, 36px); transform: rotate(-2deg); border: 3px solid #000; box-shadow: 4px 4px 0px #000; margin-bottom: 10px; font-weight: bold; }
         #status-text { font-size: clamp(12px, 2.2vmin, 20px); margin-bottom: 5px; font-weight: bold; min-height: 25px; }
@@ -155,7 +173,6 @@
 </div>
 
 <script>
-    // YouTube Player API 
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -166,20 +183,19 @@
         player = new YT.Player('player', {
             videoId: 'YgPAAgtHCts',
             playerVars: {
-                'autoplay': 1,      // 自動播放
-                'mute': 1,          // 必須靜音，否則會被瀏覽器封鎖
-                'loop': 1,          // 循環播放
-                'playlist': 'YgPAAgtHCts', // 循環必備：必須重複影片 ID
-                'controls': 0,      // 隱藏控制項
+                'autoplay': 1,
+                'mute': 1,
+                'loop': 1,
+                'playlist': 'YgPAAgtHCts',
+                'controls': 0,
                 'showinfo': 0,
                 'modestbranding': 1,
-                'playsinline': 1,   // 在行動裝置上內嵌播放，不彈出全螢幕
+                'playsinline': 1,
                 'rel': 0
             },
             events: {
                 'onReady': onPlayerReady,
                 'onStateChange': function(e) {
-                    // 萬一影片停止（例如循環失效），強制重啟
                     if (e.data === YT.PlayerState.ENDED) {
                         player.playVideo();
                     }
@@ -189,11 +205,10 @@
     }
 
     function onPlayerReady(event) {
-        event.target.mute(); // 確保靜音，這是繞過「黑色畫面」的關鍵
+        event.target.mute();
         event.target.playVideo();
     }
 
-    // --- 以下為原本的大富翁邏輯 ---
     let originalStudents = [
         {id: "1", name: "陳凱晴"}, {id: "2", name: "陳家俊"}, {id: "3", name: "陳柏希"},
         {id: "4", name: "陳子淇"}, {id: "5", name: "趙子博"}, {id: "6", name: "何宛盈"},
@@ -214,7 +229,6 @@
     let boardW = 0, boardH = 0;
     let currentIndex = 0;
     let isAnimating = false;
-    let consecutiveSpecialCount = 0;
 
     function toggleModal(show) {
         if(show) {
@@ -245,26 +259,43 @@
         let stuPool = [];
         let tempStudents = [...originalStudents];
         tempStudents.sort(() => Math.random() - 0.5);
+        
         const colors = ['#fdf6e3', '#e0f7fa', '#fce4ec', '#fff3e0', '#e8f5e9', '#fff9c4'];
+        
         tempStudents.forEach((s, idx) => {
-            stuPool.push({ type: 'student', name: s.name, id: s.id, color: colors[idx % colors.length] });
+            // 為每位同學生成隨機貓咪頭像網址 (使用 placeholder 服務)
+            // 加上隨機參數確保頭像不同
+            const randomSeed = Math.floor(Math.random() * 1000);
+            const avatarUrl = `https://cataas.com/cat/cute?width=100&height=100&unique=${randomSeed}_${idx}`;
+            
+            stuPool.push({ 
+                type: 'student', 
+                name: s.name, 
+                id: s.id, 
+                color: colors[idx % colors.length],
+                avatar: avatarUrl 
+            });
         });
+
         let specialPool = [];
         for(let i=0; i<countChance; i++) specialPool.push({ type: 'chance', text: '❓<br>機會' });
         for(let i=0; i<countFate; i++) specialPool.push({ type: 'fate', text: '❗<br>命運' });
         specialPool.sort(() => Math.random() - 0.5);
+
         const total = stuPool.length + specialPool.length;
         const sumWH = (total + 4) / 2;
         boardW = Math.ceil(sumWH * 0.62); 
         boardH = Math.floor(sumWH - boardW);
         if (boardH < 3) { boardH = 3; boardW = sumWH - 3; }
         const perimeter = 2 * (boardW + boardH) - 4;
+        
         let diff = perimeter - stuPool.length;
         if (diff > specialPool.length) {
             while (specialPool.length < diff) specialPool.push({ type: 'fate', text: '❗<br>命運' });
         } else if (diff < specialPool.length) {
             specialPool = specialPool.slice(0, diff);
         }
+
         mapData = new Array(perimeter).fill(null);
         let numStu = stuPool.length;
         for (let i = 0; i < numStu; i++) {
@@ -288,12 +319,22 @@
         board.style.gridTemplateColumns = `repeat(${boardW}, 1fr)`;
         board.style.gridTemplateRows = `repeat(${boardH}, 1fr)`;
         document.querySelectorAll('.cell').forEach(c => c.remove());
+        
         mapData.forEach((data, i) => {
             const cell = document.createElement('div');
             cell.id = `cell-${i}`;
             cell.className = `cell ${data.type}`;
-            if(data.type === 'student') cell.style.backgroundColor = data.color;
-            cell.innerHTML = `<div class="cell-text">${data.name || data.text}</div>`;
+            if(data.type === 'student') {
+                cell.style.backgroundColor = data.color;
+                // 加入頭像與名字
+                cell.innerHTML = `
+                    <img src="${data.avatar}" class="cat-avatar" alt="cat">
+                    <div class="cell-text">${data.name}</div>
+                `;
+            } else {
+                cell.innerHTML = `<div class="cell-text">${data.text}</div>`;
+            }
+            
             const pos = getGridPos(i);
             cell.style.gridRow = pos.r;
             cell.style.gridColumn = pos.c;
@@ -368,7 +409,11 @@
         modal.style.display = 'flex';
         if(data.type === 'student') {
             title.innerText = "🎉 恭喜幸運兒";
-            display.innerHTML = `<div class="result-name">${data.name}</div>`;
+            // 結果頁也顯示該學生的專屬貓咪頭像
+            display.innerHTML = `
+                <img src="${data.avatar}" style="width:120px; height:120px; border-radius:50%; border:5px solid var(--monopoly-blue); margin-bottom:10px;">
+                <div class="result-name">${data.name}</div>
+            `;
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 3000 });
         } else {
             const list = data.type === 'chance' ? chanceList : fateList;
