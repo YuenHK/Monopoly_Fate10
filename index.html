@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>大富翁抽籤系統 - 貓貓版</title>
+    <title>大富翁抽籤系統 - 貓貓進階版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --center-bg: rgba(255, 255, 255, 0.1); /* 10% 透明 */
+            --center-bg: rgba(255, 255, 255, 0.1);
             --border-color: #111;
             --monopoly-red: #e63946;
             --monopoly-blue: #0072bb;
@@ -20,10 +20,9 @@
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
-            background: #000; /* 影片載入前的底色 */
+            background: #000;
         }
 
-        /* 影片置底層 */
         .video-background {
             position: fixed;
             top: 0; left: 0;
@@ -39,7 +38,6 @@
             transform: translate(-50%, -50%);
         }
 
-        /* 遊戲外框 */
         #board-container {
             width: 90vw;
             height: 85vh; 
@@ -47,25 +45,26 @@
             max-height: 800px;
             display: grid;
             gap: 2px;
-            /* 必須是 transparent 才能看到後方的影片 */
             background: transparent !important; 
             border: 4px solid var(--border-color);
             position: relative;
             z-index: 1;
         }
 
-        /* 格子樣式 */
         .cell {
-            background: rgba(255, 255, 255, 0.85); /* 格子保留一點白色以便閱讀 */
+            background: rgba(255, 255, 255, 0.85);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             font-weight: bold;
             outline: 1px solid var(--border-color);
+            transition: transform 0.2s;
         }
 
-        /* 中間穿透區域 */
+        .cell.chance { background: rgba(255, 235, 204, 0.9); }
+        .cell.fate { background: rgba(255, 210, 210, 0.9); }
+
         #center-area { 
             grid-column: 2 / -2;
             grid-row: 2 / -2;
@@ -75,9 +74,7 @@
             align-items: center; 
             margin: 5px;
             border: 2px solid var(--border-color);
-            /* 實現 10% 透明穿透 */
             background: var(--center-bg); 
-            /* 可選：增加一點毛玻璃效果讓文字更清楚，如不需要可刪除下一行 */
             backdrop-filter: blur(2px); 
         }
 
@@ -94,21 +91,37 @@
             font-weight: bold; margin-bottom: 10px;
         }
 
-        /* 其他元件保持不變... */
         .cat-avatar { width: 3.5vmin; height: 3.5vmin; min-width: 25px; border-radius: 50%; margin-bottom: 5px; }
-        .cell-text { font-size: clamp(10px, 1.8vmin, 20px); }
-        .cell.active { border: 4px solid var(--monopoly-red); background: #fff !important; z-index: 10; outline: none; transform: scale(1.05); }
-        .dice-container { display: flex; gap: 8px; margin-bottom: 8px; }
-        .dice { width: 45px; height: 45px; background: white; border: 2px solid #000; display: flex; justify-content: center; align-items: center; font-size: 24px; border-radius: 6px; }
-        button { cursor: pointer; padding: 10px 20px; font-weight: bold; border: 2px solid #000; box-shadow: 2px 2px 0px #000; border-radius: 5px; }
+        .cell-text { font-size: clamp(10px, 1.8vmin, 20px); text-align: center; }
         
+        .cell.active { 
+            border: 4px solid var(--monopoly-red); 
+            background: #fff !important; 
+            z-index: 10; 
+            outline: none; 
+            transform: scale(1.05); 
+        }
+
+        .dice-container { display: flex; gap: 8px; margin-bottom: 8px; }
+        .dice { width: 45px; height: 45px; background: white; border: 2px solid #000; display: flex; justify-content: center; align-items: center; font-size: 24px; border-radius: 6px; box-shadow: 2px 2px 0px #000; }
+        
+        button { cursor: pointer; padding: 10px 20px; font-weight: bold; border: 2px solid #000; box-shadow: 2px 2px 0px #000; border-radius: 5px; transition: 0.1s; }
+        button:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px #000; }
+
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: #fff; padding: 20px; border-radius: 10px; width: 80%; max-width: 500px; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 600px; border: 4px solid #000; overflow-y: auto; max-height: 90vh; }
         #result-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 2000; justify-content: center; align-items: center; }
-        .result-box { background: #fff; padding: 30px; border: 5px solid #000; text-align: center; }
+        .result-box { background: #fff; padding: 30px; border: 5px solid #000; text-align: center; box-shadow: 10px 10px 0px #000; min-width: 300px; }
+        
+        .setting-group { margin-bottom: 15px; }
+        .setting-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .setting-group textarea { width: 100%; padding: 8px; border: 2px solid #000; box-sizing: border-box; font-family: inherit; }
     </style>
 </head>
 <body>
+
+<audio id="bgm" src="sounds/bgm.mp3" loop></audio>
+<audio id="sfx"></audio>
 
 <div class="video-background">
     <div id="player"></div>
@@ -116,10 +129,21 @@
 
 <div id="settings-modal" class="modal-overlay">
     <div class="modal-content">
-        <h3>⚙️ 設定</h3>
-        <textarea id="input-students" style="width:100%; height:100px;"></textarea>
-        <div style="margin-top:10px;">
-            <button onclick="applySettings()">儲存</button>
+        <h3>⚙️ 系統設定</h3>
+        <div class="setting-group">
+            <label>名單設定 (每行一個名字)</label>
+            <textarea id="input-students" rows="5"></textarea>
+        </div>
+        <div class="setting-group">
+            <label>機會清單 (每行一項)</label>
+            <textarea id="input-chance" rows="3"></textarea>
+        </div>
+        <div class="setting-group">
+            <label>命運清單 (每行一項)</label>
+            <textarea id="input-fate" rows="3"></textarea>
+        </div>
+        <div style="text-align:right;">
+            <button onclick="applySettings()" style="background:var(--monopoly-blue); color:#fff;">儲存設定</button>
             <button onclick="toggleModal(false)">關閉</button>
         </div>
     </div>
@@ -128,8 +152,8 @@
 <div id="result-modal">
     <div class="result-box">
         <h2 id="result-title"></h2>
-        <div id="result-display"></div>
-        <button onclick="closeResult()" style="margin-top:20px;">確定</button>
+        <div id="result-display" style="margin: 20px 0;"></div>
+        <button onclick="closeResult()" style="background:var(--monopoly-red); color:#fff;">確定</button>
     </div>
 </div>
 
@@ -145,12 +169,29 @@
             <button onclick="rollDice()" style="background:var(--monopoly-red); color:#fff;">🎲 擲骰子</button>
             <button onclick="startMarquee()" style="background:#ffb703;">⚡ 快速抽籤</button>
         </div>
-        <button onclick="toggleModal(true)" style="margin-top:10px; font-size:12px;">⚙️ 設定</button>
+        <button onclick="toggleModal(true)" style="margin-top:10px; font-size:12px; background:#eee;">⚙️ 設定</button>
     </div>
 </div>
 
 <script>
-    // YouTube API
+    // --- 音效控制 ---
+    const bgm = document.getElementById('bgm');
+    const sfx = document.getElementById('sfx');
+    const sfxList = ['blow', 'click', 'fate', 'roll', 'spin', 'step', 'wim'];
+    let musicStarted = false;
+    bgm.volume = 0.2; // 保持 20% 音量
+
+    function triggerAction() {
+        if (!musicStarted) {
+            bgm.play().catch(err => console.log("BGM 播放受阻"));
+            musicStarted = true;
+        }
+        const randomSfx = sfxList[Math.floor(Math.random() * sfxList.length)];
+        sfx.src = `sounds/${randomSfx}.mp3`;
+        sfx.play();
+    }
+
+    // --- YouTube 背景 ---
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -165,23 +206,52 @@
         });
     }
 
-    // 邏輯部分 (名單略，保持您原本的邏輯)
-    let originalStudents = [{id:"1", name:"陳凱晴"}, {id:"2", name:"陳家俊"}, {id:"3", name:"陳柏希"}, {id:"4", name:"陳子淇"}, {id:"5", name:"趙子博"}, {id:"6", name:"何宛盈"}, {id:"7", name:"黃子淇"}, {id:"8", name:"許家佑"}, {id:"9", name:"熊可堯"}, {id:"10", name:"高培釗"}, {id:"11", name:"郭衍銳"}, {id:"12", name:"郭宥瑜"}, {id:"13", name:"鄺皓然"}, {id:"14", name:"劉頌彥"}, {id:"15", name:"劉凱維"}, {id:"16", name:"劉逸朗"}, {id:"17", name:"李柏廷"}, {id:"18", name:"梁欣媛"}, {id:"19", name:"梁汝謙"}, {id:"20", name:"李嘉軒"}, {id:"21", name:"歐陽可晴"}, {id:"22", name:"彭洛賢"}, {id:"23", name:"彭泳沁"}, {id:"24", name:"沈梓僖"}, {id:"25", name:"蘇靖楠"}, {id:"26", name:"王翠彤"}, {id:"27", name:"黃嘉璇"}, {id:"28", name:"黃　森"}, {id:"29", name:"謝雨桐"}, {id:"30", name:"楊凱喬"}, {id:"31", name:"楊茵晴"}, {id:"32", name:"葉曦臨"}];
+    // --- 核心變數 ---
+    let originalStudents = [{name:"陳凱晴"}, {name:"陳家俊"}, {name:"陳柏希"}, {name:"陳子淇"}, {name:"趙子博"}, {name:"何宛盈"}, {name:"黃子淇"}, {name:"許家佑"}, {name:"熊可堯"}, {name:"高培釗"}, {name:"郭衍銳"}, {name:"郭宥瑜"}, {name:"鄺皓然"}, {name:"劉頌彥"}, {name:"劉凱維"}, {name:"劉逸朗"}, {name:"李柏廷"}, {name:"梁欣媛"}, {name:"梁汝謙"}, {name:"李嘉軒"}, {name:"歐陽可晴"}, {name:"彭洛賢"}, {name:"彭泳沁"}, {name:"沈梓僖"}, {name:"蘇靖楠"}, {name:"王翠彤"}, {name:"黃嘉璇"}, {name:"黃　森"}, {name:"謝雨桐"}, {name:"楊凱喬"}, {name:"楊茵晴"}, {name:"葉曦臨"}];
+    
+    // 更新預設清單內容
+    let chanceItems = [
+        "下一位抽到的同學，可在今堂隨意移動座位", 
+        "下一位抽到的同學，可重抽一次", 
+        "下一位抽到的同學，可點播一首歌"
+    ];
+    let fateItems = [
+        "下一位抽到的同學，需使用英文作答", 
+        "下一位抽到的同學，需邊跳舞邊回答", 
+        "下一位抽到的同學，需模仿帶貨直播主的語氣回答",
+        "下一位抽到的同學，需用唱歌的方式把答案唱出來"
+    ];
+    
     let mapData = [];
     let boardW = 0, boardH = 0, currentIndex = 0, isAnimating = false;
+    let nextMustBeStudent = false; // 功能：下一抽必中人名
+
+    const blacklist = ["楊凱喬", "楊茵晴"]; // 功能：黑名單
 
     function initBoard() {
-        let tempStudents = [...originalStudents].sort(() => Math.random() - 0.5);
-        let total = tempStudents.length + 12; // 預留空間給機會命運
-        let sumWH = (total + 4) / 2;
-        boardW = Math.ceil(sumWH * 0.6); boardH = Math.floor(sumWH - boardW);
-        let perimeter = 2 * (boardW + boardH) - 4;
-        
-        mapData = new Array(perimeter).fill(null).map((_, i) => {
-            if (i < tempStudents.length) return { type: 'student', name: tempStudents[i].name, avatar: `https://cataas.com/cat/cute?width=50&unique=${i}` };
-            return { type: 'chance', text: '❓<br>機會' };
-        }).sort(() => Math.random() - 0.5);
+        let stuPool = originalStudents.map((s, i) => ({
+            type: 'student',
+            name: s.name,
+            avatar: `https://cataas.com/cat/cute?width=100&unique=${i}_${Math.random()}`
+        }));
 
+        let totalNeeded = stuPool.length + 12; 
+        let sumWH = (totalNeeded + 4) / 2;
+        boardW = Math.ceil(sumWH * 0.6); 
+        boardH = Math.floor(sumWH - boardW);
+        let perimeter = 2 * (boardW + boardH) - 4;
+
+        let specialCount = perimeter - stuPool.length;
+        let specialPool = [];
+        for (let i = 0; i < specialCount; i++) {
+            if (i % 2 === 0) {
+                specialPool.push({ type: 'chance', text: '❓<br>機會' });
+            } else {
+                specialPool.push({ type: 'fate', text: '❗<br>命運' });
+            }
+        }
+
+        mapData = [...stuPool, ...specialPool].sort(() => Math.random() - 0.5);
         renderBoard();
     }
 
@@ -194,7 +264,7 @@
         mapData.forEach((data, i) => {
             const cell = document.createElement('div');
             cell.id = `cell-${i}`;
-            cell.className = `cell`;
+            cell.className = `cell ${data.type}`;
             cell.innerHTML = data.type === 'student' ? `<img src="${data.avatar}" class="cat-avatar"><div class="cell-text">${data.name}</div>` : `<div class="cell-text">${data.text}</div>`;
             const pos = getGridPos(i);
             cell.style.gridRow = pos.r; cell.style.gridColumn = pos.c;
@@ -215,36 +285,101 @@
         document.getElementById(`cell-${currentIndex}`)?.classList.add('active');
     }
 
+    function calculateValidSteps(requestedSteps) {
+        let targetIdx = (currentIndex + requestedSteps) % mapData.length;
+        while (true) {
+            const target = mapData[targetIdx];
+            if (nextMustBeStudent && target.type !== 'student') {
+                requestedSteps++;
+                targetIdx = (currentIndex + requestedSteps) % mapData.length;
+                continue;
+            }
+            if (target.type === 'student' && blacklist.includes(target.name)) {
+                requestedSteps++;
+                targetIdx = (currentIndex + requestedSteps) % mapData.length;
+                continue;
+            }
+            break;
+        }
+        return requestedSteps;
+    }
+
     function rollDice() {
         if (isAnimating) return;
+        triggerAction();
         isAnimating = true;
-        let s = Math.floor(Math.random() * 12) + 1;
-        moveSteps(s);
+        let s1 = Math.floor(Math.random() * 6) + 1;
+        let s2 = Math.floor(Math.random() * 6) + 1;
+        document.getElementById('dice1').innerText = s1;
+        document.getElementById('dice2').innerText = s2;
+        let total = calculateValidSteps(s1 + s2);
+        moveSteps(total);
     }
 
     function startMarquee() {
         if (isAnimating) return;
+        triggerAction();
         isAnimating = true;
-        moveSteps(mapData.length + Math.floor(Math.random()*10), true);
+        let base = mapData.length + Math.floor(Math.random() * mapData.length);
+        let total = calculateValidSteps(base);
+        moveSteps(total, true);
     }
 
     function moveSteps(s, fast=false) {
         if (s <= 0) { isAnimating = false; land(); return; }
         currentIndex = (currentIndex + 1) % mapData.length;
         updateActive();
-        setTimeout(() => moveSteps(s - 1, fast), fast ? 50 : 200);
+        setTimeout(() => moveSteps(s - 1, fast), fast ? 60 : 200);
     }
 
     function land() {
         const data = mapData[currentIndex];
-        document.getElementById('result-modal').style.display = 'flex';
-        document.getElementById('result-title').innerText = "中獎者";
-        document.getElementById('result-display').innerText = data.name || "機會";
-        if (data.type === 'student') confetti();
+        const modal = document.getElementById('result-modal');
+        const title = document.getElementById('result-title');
+        const display = document.getElementById('result-display');
+        modal.style.display = 'flex';
+        
+        if (data.type === 'student') {
+            nextMustBeStudent = false;
+            title.innerText = "🎉 恭喜幸運兒";
+            display.innerHTML = `
+                <img src="${data.avatar}" style="width:120px; height:120px; border-radius:50%; border:4px solid #000; margin-bottom:10px;">
+                <div style="font-size:40px; font-weight:bold; color:var(--monopoly-blue);">${data.name}</div>
+            `; // 功能：顯示貓咪頭像
+            confetti({ zIndex: 3000 });
+        } else {
+            nextMustBeStudent = true;
+            let pool = data.type === 'chance' ? chanceItems : fateItems;
+            let randomText = pool[Math.floor(Math.random() * pool.length)];
+            title.innerText = data.type === 'chance' ? "❓ 機會時刻" : "❗ 命運降臨";
+            display.innerHTML = `<div style="font-size:24px; font-weight:bold; padding:20px; line-height:1.4;">${randomText}<br><small style="color:red;">(下一抽必中人名！)</small></div>`;
+        }
     }
 
-    function closeResult() { document.getElementById('result-modal').style.display = 'none'; }
-    function toggleModal(s) { document.getElementById('settings-modal').style.display = s ? 'flex' : 'none'; }
+    function closeResult() { 
+        triggerAction();
+        document.getElementById('result-modal').style.display = 'none'; 
+    }
+
+    function toggleModal(s) { 
+        triggerAction();
+        if(s) {
+            document.getElementById('input-students').value = originalStudents.map(s => s.name).join('\n');
+            document.getElementById('input-chance').value = chanceItems.join('\n');
+            document.getElementById('input-fate').value = fateItems.join('\n');
+        }
+        document.getElementById('settings-modal').style.display = s ? 'flex' : 'none'; 
+    }
+
+    function applySettings() {
+        triggerAction();
+        const studentsIn = document.getElementById('input-students').value;
+        originalStudents = studentsIn.split('\n').filter(n => n.trim() !== "").map(n => ({name: n.trim()}));
+        chanceItems = document.getElementById('input-chance').value.split('\n').filter(t => t.trim() !== "");
+        fateItems = document.getElementById('input-fate').value.split('\n').filter(t => t.trim() !== "");
+        initBoard();
+        toggleModal(false);
+    }
 
     initBoard();
 </script>
