@@ -24,14 +24,16 @@
         }
 
         /* 1. 背景影片佔滿全螢幕並保持覆蓋 */
-        .video-background {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: -1;
-            pointer-events: none;
-            overflow: hidden;
-        }
+        .video-background-native {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			object-fit: cover;
+			z-index: -1;
+			pointer-events: none;
+		}
 
         .video-background iframe {
             position: absolute;
@@ -97,7 +99,11 @@
         }
 
         .cat-avatar { width: 3.5vmin; height: 3.5vmin; min-width: 25px; border-radius: 50%; margin-bottom: 5px; object-fit: cover; }
-        .cell-text { font-size: clamp(10px, 1.8vmin, 20px); text-align: center; }
+        .cat-avatar {
+			background: #eee url('https://cdnjs.cloudflare.com/ajax/libs/galleriffic/2.0.1/css/loader.gif') no-repeat center;
+			background-size: 50%;
+		}
+		.cell-text { font-size: clamp(10px, 1.8vmin, 20px); text-align: center; }
         
         .cell.active { 
             border: 4px solid var(--monopoly-red); 
@@ -125,12 +131,12 @@
 </head>
 <body>
 
-<audio id="bgm" src="sounds/bgm.mp3" loop></audio>
+<audio id="bgm" src="sound/bgm.mp3" loop></audio>
 <audio id="sfx"></audio>
 
-<div class="video-background">
-    <div id="player"></div>
-</div>
+<video autoplay muted loop playsinline class="video-background-native">
+    <source src="video/bg.mp4" type="video/mp4">
+</video>
 
 <div id="settings-modal" class="modal-overlay">
     <div class="modal-content">
@@ -179,39 +185,14 @@
 </div>
 
 <script>
-    // --- 音效控制 ---
+    // ==========================================
+    // 1. 基礎資料與核心變數
+    // ==========================================
     const bgm = document.getElementById('bgm');
     const sfx = document.getElementById('sfx');
-    const sfxList = ['blow', 'click', 'fate', 'roll', 'spin', 'step', 'wim'];
     let musicStarted = false;
-    bgm.volume = 0.2; 
+    bgm.volume = 0.1; 
 
-    function triggerAction() {
-        if (!musicStarted) {
-            bgm.play().catch(err => console.log("BGM 播放受阻"));
-            musicStarted = true;
-        }
-        const randomSfx = sfxList[Math.floor(Math.random() * sfxList.length)];
-        sfx.src = `sounds/${randomSfx}.mp3`;
-        sfx.play();
-    }
-
-    // --- YouTube 背景 ---
-    var tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    var player;
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            videoId: 'YgPAAgtHCts',
-            playerVars: { 'autoplay': 1, 'mute': 1, 'loop': 1, 'playlist': 'YgPAAgtHCts', 'controls': 0, 'modestbranding': 1, 'playsinline': 1 },
-            events: { 'onReady': (e) => e.target.playVideo() }
-        });
-    }
-
-    // --- 核心變數 ---
     let originalStudents = [{name:"陳凱晴"}, {name:"陳家俊"}, {name:"陳柏希"}, {name:"陳子淇"}, {name:"趙子博"}, {name:"何宛盈"}, {name:"黃子淇"}, {name:"許家佑"}, {name:"熊可堯"}, {name:"高培釗"}, {name:"郭衍銳"}, {name:"郭宥瑜"}, {name:"鄺皓然"}, {name:"劉頌彥"}, {name:"劉凱維"}, {name:"劉逸朗"}, {name:"李柏廷"}, {name:"梁欣媛"}, {name:"梁汝謙"}, {name:"李嘉軒"}, {name:"歐陽可晴"}, {name:"彭洛賢"}, {name:"彭泳沁"}, {name:"沈梓僖"}, {name:"蘇靖楠"}, {name:"王翠彤"}, {name:"黃嘉璇"}, {name:"黃　森"}, {name:"謝雨桐"}, {name:"楊凱喬"}, {name:"楊茵晴"}, {name:"葉曦臨"}];
     
     let chanceItems = ["下一位抽到的同學，可在今堂隨意移動座位", "下一位抽到的同學，可重抽一次", "下一位抽到的同學，可點播一首歌"];
@@ -220,15 +201,41 @@
     let mapData = [];
     let boardW = 0, boardH = 0, currentIndex = 0, isAnimating = false;
     let nextMustBeStudent = false; 
-
     const blacklist = ["楊凱喬", "楊茵晴"]; 
 
+    // ==========================================
+    // 2. 加速與穩定性優化 (預載入)
+    // ==========================================
+    function preloadGifs() {
+        originalStudents.forEach((_, i) => {
+            const img = new Image();
+            // 使用固定 i 值確保瀏覽器可以 Cache 圖片，提升載入速度
+            img.src = `https://cataas.com/cat/gif?unique=${i}`;
+        });
+    }
+
+    function triggerAction() {
+        if (!musicStarted) {
+            bgm.play().catch(err => console.log("BGM 播放受阻"));
+            musicStarted = true;
+        }
+        // 從 sfxList 陣列中隨機挑選一個音效名稱
+        const randomSfx = sfxList[Math.floor(Math.random() * sfxList.length)];
+        
+        // 將這裡的 sounds 改成 sound
+        sfx.src = `sound/${randomSfx}.mp3`;
+        sfx.play().catch(err => console.log("SFX 播放受阻"));
+    }
+
+    // ==========================================
+    // 3. 棋盤邏輯
+    // ==========================================
     function initBoard() {
         let stuPool = originalStudents.map((s, i) => ({
             type: 'student',
             name: s.name,
-            // 2. 學生頭像改為貓貓動圖 (GIF)
-            avatar: `https://cataas.com/cat/gif?unique=${i}_${Math.random()}`
+            // 移除 Math.random() 以利快取提升速度
+            avatar: `https://cataas.com/cat/gif?unique=${i}`
         }));
 
         let totalNeeded = stuPool.length + 12; 
@@ -240,11 +247,7 @@
         let specialCount = perimeter - stuPool.length;
         let specialPool = [];
         for (let i = 0; i < specialCount; i++) {
-            if (i % 2 === 0) {
-                specialPool.push({ type: 'chance', text: '❓<br>機會' });
-            } else {
-                specialPool.push({ type: 'fate', text: '❗<br>命運' });
-            }
+            specialPool.push(i % 2 === 0 ? { type: 'chance', text: '❓<br>機會' } : { type: 'fate', text: '❗<br>命運' });
         }
 
         mapData = [...stuPool, ...specialPool].sort(() => Math.random() - 0.5);
@@ -261,7 +264,10 @@
             const cell = document.createElement('div');
             cell.id = `cell-${i}`;
             cell.className = `cell ${data.type}`;
-            cell.innerHTML = data.type === 'student' ? `<img src="${data.avatar}" class="cat-avatar"><div class="cell-text">${data.name}</div>` : `<div class="cell-text">${data.text}</div>`;
+            // 加入 onerror 防死圖機制與 loading="lazy" 效能優化
+            cell.innerHTML = data.type === 'student' 
+                ? `<img src="${data.avatar}" class="cat-avatar" loading="lazy" onerror="this.src='https://placekitten.com/100/100'"><div class="cell-text">${data.name}</div>` 
+                : `<div class="cell-text">${data.text}</div>`;
             const pos = getGridPos(i);
             cell.style.gridRow = pos.r; cell.style.gridColumn = pos.c;
             board.appendChild(cell);
@@ -281,6 +287,9 @@
         document.getElementById(`cell-${currentIndex}`)?.classList.add('active');
     }
 
+    // ==========================================
+    // 4. 遊戲互動邏輯
+    // ==========================================
     function calculateValidSteps(requestedSteps) {
         let targetIdx = (currentIndex + requestedSteps) % mapData.length;
         while (true) {
@@ -339,7 +348,7 @@
             nextMustBeStudent = false;
             title.innerText = "🎉 恭喜幸運兒";
             display.innerHTML = `
-                <img src="${data.avatar}" style="width:150px; height:150px; border-radius:15px; border:4px solid #000; margin-bottom:10px; object-fit:cover;">
+                <img src="${data.avatar}" style="width:150px; height:150px; border-radius:15px; border:4px solid #000; margin-bottom:10px; object-fit:cover;" onerror="this.src='https://placekitten.com/150/150'">
                 <div style="font-size:40px; font-weight:bold; color:var(--monopoly-blue);">${data.name}</div>
             `; 
             confetti({ zIndex: 3000 });
@@ -376,8 +385,29 @@
         initBoard();
         toggleModal(false);
     }
+	
+	const totalSounds = 38; 
 
-    initBoard();
+    function triggerAction() {
+        if (!musicStarted) {
+            bgm.play().catch(err => console.log("BGM 播放受阻"));
+            musicStarted = true;
+        }
+        
+        // 隨機產生 1 到 totalSounds (例如 10) 之間的數字
+        const randomNum = Math.floor(Math.random() * totalSounds) + 1;
+        
+        // 組合出檔案路徑，例如 "sound/3.mp3"
+        sfx.src = `sound/${randomNum}.mp3`;
+        sfx.play().catch(err => console.log("SFX 播放受阻"));
+    }
+	
+
+    // ==========================================
+    // 5. 啟動程式
+    // ==========================================
+    preloadGifs(); // 啟動時先預載入圖片
+    initBoard();   // 畫出棋盤
 </script>
 </body>
 </html>
