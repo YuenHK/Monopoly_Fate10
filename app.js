@@ -99,7 +99,8 @@ async function draw(mode){
     $('dice1').textContent=result.move.dice?.[0]??'⚡';$('dice2').textContent=result.move.dice?.[1]??'⚡';
     $('status-text').textContent='幸運正在路上⋯';
     const reduced=reducedMedia();
-    for(let i=0;i<result.move.steps;i++){currentIndex=(currentIndex+1)%result.board.cells.length;active();if(!reduced)await sleep(pending.mode==='quick'?Math.min(55,3000/result.move.steps):160);}
+    const stepDelay=result.move.algorithm==='equal'?Math.min(pending.mode==='quick'?55:160,(pending.mode==='quick'?900:1800)/result.move.steps):pending.mode==='quick'?Math.min(55,3000/result.move.steps):160;
+    for(let i=0;i<result.move.steps;i++){currentIndex=(currentIndex+1)%result.board.cells.length;active();if(!reduced)await sleep(stepDelay);}
     savePending(null);showResult(result);loadSoundChoices().catch(()=>{});
     lesson.must_student=result.kind==='student'?0:1;
     $('status-text').textContent=lesson.must_student?'下一抽必定抽中學生！':'再來一次，下一位會是誰？';
