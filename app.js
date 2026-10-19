@@ -1,21 +1,39 @@
 import { celebrate } from './celebration.js';
 import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
+import { themeById } from './themes.js';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
+let currentTheme=themeById('basic'),themeLoaded=false,mediaUnlocked=false;
 const bgm=$('bgm'),sfx=$('sfx'); bgm.volume=.1;
+const themeVideo=$('theme-video');
+function applyTheme(id){
+  const theme=themeById(id);if(themeLoaded&&theme.id===currentTheme.id)return;
+  currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
+  bgm.pause();sfx.pause();bgm.src=theme.music;bgm.load();
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  themeVideo.pause();themeVideo.autoplay=!reduced;themeVideo.src=theme.video;themeVideo.load();
+  if(!reduced)themeVideo.play().catch(()=>{});
+  if(mediaUnlocked&&!muted)bgm.play().catch(()=>{});
+}
+async function loadTheme(){const data=await api('/api/theme');applyTheme(data.theme);}
+bgm.addEventListener('error',()=>{if(themeLoaded)notice('主題音樂暫時未能播放，請稍後重試',true);});
+themeVideo.addEventListener('error',()=>{if(themeLoaded)notice('主題背景影片暫時未能播放，請稍後重試',true);});
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function sound(){if(muted)return;bgm.play().catch(()=>{});if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
+function startMedia(){mediaUnlocked=true;if(!matchMedia('(prefers-reduced-motion: reduce)').matches)themeVideo.play().catch(()=>{});if(!muted)bgm.play().catch(()=>{});}
+function sound(){startMedia();if(muted)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
 async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled);}
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
-window.addEventListener('focus',()=>loadSoundChoices().catch(()=>{}));
+window.addEventListener('focus',()=>{loadSoundChoices().catch(()=>{});loadTheme().catch(()=>{});});
+if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.onmessage=()=>loadTheme().catch(()=>{});}
+setInterval(()=>{if(document.visibilityState==='visible')loadTheme().catch(()=>{});},30000);
 $('sound-toggle').addEventListener('click',()=>{muted=!muted;$('sound-toggle').textContent=muted?'🔇 音效關閉':'🔊 音效開啟';$('sound-toggle').setAttribute('aria-pressed',String(!muted));if(muted){bgm.pause();sfx.pause();}else sound();});
 async function lobby(){
-  await loadSoundChoices();classes=await api('/api/classes');options($('class-select'),classes,'請選擇班別',c=>`${c.name} · ${c.student_count} 人`);
+  await Promise.all([loadSoundChoices(),loadTheme()]);classes=await api('/api/classes');options($('class-select'),classes,'請選擇班別',c=>`${c.name} · ${c.student_count} 人`);
   if(!$('class-select').value&&classes.length)$('class-select').value=classes[0].id;
   $('lobby-controls').hidden=false;
 }
-form('lobby-controls',async()=>{await openClass($('class-select').value);});
+form('lobby-controls',async()=>{startMedia();await loadTheme();await openClass($('class-select').value);});
 function pendingKey(){return 'monopoly-pending:'+lesson.id;}
 function savePending(value){pending=value;try{if(value)sessionStorage.setItem(pendingKey(),JSON.stringify(value));else sessionStorage.removeItem(pendingKey());}catch{}$('recover').hidden=!value;}
 function lock(value){busy=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}
@@ -55,9 +73,10 @@ function renderBoard(board){
 function active(){document.querySelectorAll('.cell.active').forEach(e=>e.classList.remove('active'));$('cell-'+currentIndex)?.classList.add('active');}
 async function draw(mode){
   if(busy||!lesson)return;
-  lock(true);sound();
+  lock(true);const previousTheme=currentTheme.id;sound();
   if(!pending)savePending({requestId:crypto.randomUUID(),mode});
   try{
+    await loadTheme();if(previousTheme!==currentTheme.id)sound();
     const result=await api(`/api/classes/${lesson.class_id}/draw`,pending);
     lesson.students=result.students||lesson.students;currentIndex=result.move.fromIndex;renderBoard(result.board);
     $('dice1').textContent=result.move.dice?.[0]??'⚡';$('dice2').textContent=result.move.dice?.[1]??'⚡';
@@ -80,7 +99,7 @@ function showResult(result){
   $('result-kicker').textContent=student?'THE LUCKY ONE':'A LITTLE SURPRISE';$('result-display').replaceChildren();
   if(student){$('result-display').append(avatar(result.avatar_id,result.student_name,'avatar-large'),node('div',result.student_name,'result-name'));$('result-note').textContent='';$('result-note').hidden=true;}
   else{$('result-note').hidden=false;$('result-display').append(node('div',result.event_text,'result-event'));$('result-note').textContent='下一位抽到的同學適用這項事件。下一抽必定抽中人名！';}
-  $('result-modal').showModal();if(student)celebrate($('result-modal'));
+  $('result-modal').showModal();if(student)celebrate($('result-modal'),currentTheme.effect);
 }
 $('roll').addEventListener('click',()=>draw('dice'));$('quick').addEventListener('click',()=>draw('quick'));$('recover').addEventListener('click',()=>draw(pending?.mode||'quick'));
 $('close-result').addEventListener('click',()=>{$('result-modal').close();});
