@@ -1,5 +1,7 @@
 import { celebrate } from './celebration.js';
-import { $, api, node, notice, today, options, form, avatar } from './shared.js';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
+const appPath=new URL('./',location.href).pathname;
+$('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
 const bgm=$('bgm'),sfx=$('sfx'); bgm.volume=.1;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -22,9 +24,9 @@ async function openClass(classId){
   lesson=await api('/api/classes/'+classId+'/game',{});currentIndex=lesson.board.currentIndex;
   $('lobby').hidden=true;$('game').hidden=false;$('change-lesson').hidden=false;
   $('context-text').textContent=lesson.class_name;
-  $('stats-link').href='/admin.html?class='+lesson.class_id+'&view=statistics';
+  $('stats-link').href=apiOrigin()+'/admin.html?class='+lesson.class_id;
   $('status-text').textContent=lesson.must_student?'下一抽必定抽中學生！':'準備好了嗎？';
-  history.replaceState(null,'','/?class='+lesson.class_id);
+  history.replaceState(null,'',appPath+'?class='+lesson.class_id);
   renderBoard(lesson.board);lock(false);
   // A closed lesson must still allow switching to a different class.
   $('change-lesson').disabled=false;
@@ -82,7 +84,7 @@ function showResult(result){
 }
 $('roll').addEventListener('click',()=>draw('dice'));$('quick').addEventListener('click',()=>draw('quick'));$('recover').addEventListener('click',()=>draw(pending?.mode||'quick'));
 $('close-result').addEventListener('click',()=>{$('result-modal').close();});
-$('change-lesson').addEventListener('click',async()=>{if(busy)return;$('game').hidden=true;$('lobby').hidden=false;history.replaceState(null,'','/');try{await lobby();}catch(e){notice(e.message,true);}});
+$('change-lesson').addEventListener('click',async()=>{if(busy)return;$('game').hidden=true;$('lobby').hidden=false;history.replaceState(null,'',appPath);try{await lobby();}catch(e){notice(e.message,true);}});
 window.addEventListener('resize',()=>{if(renderedBoard)renderBoard(renderedBoard);});
 try{await lobby();const query=new URLSearchParams(location.search);let classId=query.get('class');if(!classId&&query.get('lesson'))classId=(await api('/api/lessons/'+query.get('lesson'))).class_id;if(classId)await openClass(classId);}
-catch(e){if(e.status===401){$('login-required').hidden=false;$('lobby-controls').hidden=true;}else notice(e.message,true);}
+catch(e){notice(e.message,true);}

@@ -26,7 +26,8 @@ async function postgresAdapter() {
 for (const backend of ['SQLite','PostgreSQL']) {
   test(`${backend}: classroom workflow, authorization and persistence`, async t => {
     const dataDir=await mkdtemp(join(tmpdir(),'monopoly-test-'));
-    const app=await createApplication({dataDir,setupCode:'test-setup',...(backend==='PostgreSQL'?{database:await postgresAdapter()}:{})});
+    const publicOrigin='https://yuenhk.github.io';
+    const app=await createApplication({dataDir,setupCode:'test-setup',publicOrigin,...(backend==='PostgreSQL'?{database:await postgresAdapter()}:{})});
     app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
     const origin='http://127.0.0.1:'+app.server.address().port;let cookie='';
     async function call(path,data,method=data===undefined?'GET':'POST',auth=true,headers={}){
@@ -176,6 +177,33 @@ for (const backend of ['SQLite','PostgreSQL']) {
         assert.equal((await call(`/api/lessons/${old}/draw`,{mode:'quick',requestId:'same'})).body.id,oldDraw);
         assert.equal((await call(`/api/classes/${c}/draw`,{mode:'quick',requestId:'same'})).body.id,first.id);
         await app.db.run('DELETE FROM draws WHERE lesson_id=?',record.id);
+      });
+      await t.test('anonymous Pages game records once while admin and archived classes stay protected',async()=>{
+        const c=(await call('/api/classes',{name:'公開抽籤測試'})).body.id;
+        await call(`/api/classes/${c}/students`,{students:[{name:'公開測試學生',number:'1'}]},'PUT');
+        const headers={origin:publicOrigin,'sec-fetch-site':'cross-site'};
+        const preflight=await fetch(origin+`/api/play/classes/${c}/draw`,{method:'OPTIONS',headers:{origin:publicOrigin,'access-control-request-method':'POST','access-control-request-headers':'content-type'}});
+        assert.equal(preflight.status,204);assert.equal(preflight.headers.get('access-control-allow-origin'),publicOrigin);
+        assert.equal(preflight.headers.get('access-control-allow-credentials'),null);
+        const list=await call('/api/play/classes',undefined,'GET',false,headers);
+        assert.ok(list.body.some(row=>row.id===c));assert.deepEqual(Object.keys(list.body.find(row=>row.id===c)).sort(),['id','name','student_count']);
+        const game=await call(`/api/play/classes/${c}/game`,{},'POST',false,headers);
+        assert.equal(game.status,200);assert.equal(game.body.students.length,1);assert.equal(game.body.class_name,'公開抽籤測試');
+        const draw=await call(`/api/play/classes/${c}/draw`,{mode:'quick',requestId:'public-once'},'POST',false,headers);
+        assert.equal(draw.status,200);assert.equal((await call(`/api/play/classes/${c}/draw`,{mode:'quick',requestId:'public-once'},'POST',false,headers)).body.id,draw.body.id);
+        assert.equal((await call(`/api/classes/${c}/stats`)).body.draws.length,1);
+        assert.equal((await call(`/api/play/classes/${c}/game`,{},'POST',false,headers)).body.id,game.body.id);
+        assert.equal((await call('/api/play/lessons/'+game.body.id,undefined,'GET',false,headers)).body.class_id,c);
+        const sounds=await call('/api/play/sounds',undefined,'GET',false,headers);assert.equal(sounds.status,200);assert.deepEqual(Object.keys(sounds.body),['items']);assert.ok(sounds.body.items.every(s=>s.enabled));
+        for(const path of ['/api/classes','/api/avatars','/api/events',`/api/classes/${c}/stats`,`/api/classes/${c}/students`])assert.equal((await call(path,undefined,'GET',false)).status,401);
+        for(const path of ['/api/play/events','/api/play/students','/api/play/avatars','/api/play/sounds/refresh'])assert.equal((await call(path,{},'POST',false,headers)).status,404);
+        assert.equal((await call('/api/play/classes',undefined,'GET',false,{origin:'https://evil.example'})).status,403);
+        assert.equal((await call('/api/events',{chance:['x'],fate:['y']},'PUT',true,headers)).status,403);
+        await call('/api/classes/'+c,{},'DELETE');
+        assert.ok(!(await call('/api/play/classes',undefined,'GET',false,headers)).body.some(row=>row.id===c));
+        assert.equal((await call(`/api/play/classes/${c}/game`,{},'POST',false,headers)).status,404);
+        assert.equal((await call(`/api/play/classes/${c}/draw`,{mode:'quick',requestId:'archived'},'POST',false,headers)).status,404);
+        await app.db.run('DELETE FROM draws WHERE lesson_id=?',game.body.id);
       });
       await t.test('logout revokes teacher session',async()=>{
         await call('/api/logout',{});assert.equal((await call('/api/avatars')).status,401);

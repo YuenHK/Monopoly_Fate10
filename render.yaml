@@ -15,5 +15,7 @@ services:
         value: 'true'
       - key: NODE_ENV
         value: production
+      - key: PUBLIC_APP_ORIGIN
+        value: https://yuenhk.github.io
       - key: DATABASE_URL
         sync: false
