@@ -22,6 +22,7 @@ document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click',
   refresh().catch(e => notice(e.message, true));
 }));
 async function showAuth() {
+  $('theme-preview-audio').pause();$('theme-preview-video').pause();
   setupRequired = (await api('/api/status')).setupRequired;
   $('auth').hidden = false; $('workspace').hidden = true; $('logout').hidden = true;
   $('setup-code-label').hidden = !setupRequired; $('setup-code').required = setupRequired;
@@ -146,11 +147,12 @@ $('export-links').addEventListener('click', async () => {
   const b = $('export-links'); b.disabled = true;
   try {
     const links = await api(`/api/classes/${$('class-select').value}/links`, {});
-    downloadCSV('學生頭像個人連結.csv', [['學號','學生顯示 ID','個人連結','有效至（香港）'], ...links.map(l => [l.number,l.display_id||l.name,new URL(l.path,location.origin).href,date(l.expires)])]); notice('已匯出，請把每人的連結個別交給本人');
+    const className=classes.find(c=>c.id===$('class-select').value)?.name||'班別';
+    downloadCSV(className.replace(/[\/:*?"<>|]/g,'_')+'學生頭像個人連結.csv', [['學號','學生顯示 ID','個人連結','有效至（香港）'], ...links.map(l => [l.number,l.display_id||l.name,new URL(l.path,location.origin).href,date(l.expires)])]); notice('已匯出，請把每人的連結個別交給本人');
   } catch (e) { notice(e.message, true); } finally { b.disabled = false; }
 });
 async function loadAvatars() {
-  avatarRows = await api('/api/avatars');const pending=avatarRows.filter(a=>a.status==='pending').length;tabCount('pending-count',countFormat.format(pending),`${pending} 張頭像待審批`);renderAvatars();
+  avatarRows = await api('/api/avatars');const pending=avatarRows.filter(a=>a.status==='pending').length;tabCount('pending-count',countFormat.format(pending),`${pending} 張頭像待審批`);$('pending-count').classList.toggle('pending',pending>0);renderAvatars();
 }
 function renderAvatars() {
   $('avatar-grid').replaceChildren(); const filter = $('avatar-filter').value;
@@ -353,7 +355,8 @@ async function loadThemes(){
     input.addEventListener('change',()=>{if(input.checked)previewTheme(theme.id);});
     const title=node('strong',theme.icon+' '+theme.name),palette=node('span',undefined,'theme-palette');palette.setAttribute('aria-hidden','true');
     for(const color of theme.colors){const chip=node('span');chip.style.background=color;palette.append(chip);}
-    card.append(input,title,palette,node('span',theme.description));return card;
+    const preview=node('img');preview.src='theme-media/'+theme.id+'-preview.svg';preview.alt=theme.name+'主頁預覽';preview.className='theme-card-image';preview.loading='lazy';
+    card.append(input,title,preview,palette,node('span',theme.description));return card;
   }));
   previewTheme(saved.theme);$('active-theme').textContent='目前使用：'+themeById(saved.theme).name;
   tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);

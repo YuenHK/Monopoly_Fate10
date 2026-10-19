@@ -20,7 +20,8 @@ async function loadTheme(){const data=await api('/api/theme');applyTheme(data.th
 bgm.addEventListener('error',()=>{if(themeLoaded)notice('主題音樂暫時未能播放，請稍後重試',true);});
 themeVideo.addEventListener('error',()=>{if(themeLoaded)notice('主題背景影片暫時未能播放，請稍後重試',true);});
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function sound(){mediaUnlocked=true;if(muted)return;bgm.play().catch(()=>{});if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
+function startMedia(){mediaUnlocked=true;if(!matchMedia('(prefers-reduced-motion: reduce)').matches)themeVideo.play().catch(()=>{});if(!muted)bgm.play().catch(()=>{});}
+function sound(){startMedia();if(muted)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
 async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled);}
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
 window.addEventListener('focus',()=>{loadSoundChoices().catch(()=>{});loadTheme().catch(()=>{});});
@@ -32,7 +33,7 @@ async function lobby(){
   if(!$('class-select').value&&classes.length)$('class-select').value=classes[0].id;
   $('lobby-controls').hidden=false;
 }
-form('lobby-controls',async()=>{mediaUnlocked=true;if(!muted)bgm.play().catch(()=>{});await loadTheme();await openClass($('class-select').value);});
+form('lobby-controls',async()=>{startMedia();await loadTheme();await openClass($('class-select').value);});
 function pendingKey(){return 'monopoly-pending:'+lesson.id;}
 function savePending(value){pending=value;try{if(value)sessionStorage.setItem(pendingKey(),JSON.stringify(value));else sessionStorage.removeItem(pendingKey());}catch{}$('recover').hidden=!value;}
 function lock(value){busy=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}

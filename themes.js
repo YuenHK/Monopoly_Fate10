@@ -4,4 +4,4 @@ export const THEMES = Object.freeze([
   {id:'dog',name:'狗主題',icon:'🐶',colors:['#f1e4cf','#956037','#8cbfc1'],music:'theme-media/dog-music.mp3',sound:'theme-media/bark.mp3',video:'theme-media/dog.mp4',effect:'dogs',avatar:'🐶',description:'暖棕配色 · 汪聲節奏音樂 · 狗狗噴發 · 狗狗循環影片'}
 ]);
 export function themeById(id){return THEMES.find(theme=>theme.id===id)||THEMES[0];}
-export const THEME_MEDIA = ['meme.mp4','cat.mp4','dog.mp4','cat-music.mp3','dog-music.mp3','meow.mp3','bark.mp3','credits.html'];
+export const THEME_MEDIA = ['meme.mp4','cat.mp4','dog.mp4','cat-music.mp3','dog-music.mp3','meow.mp3','bark.mp3','credits.html','basic-preview.svg','cat-preview.svg','dog-preview.svg'];
