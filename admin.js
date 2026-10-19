@@ -10,7 +10,9 @@ const kindLabel = { student: '學生', chance: '機會', fate: '命運' };
 const countFormat=new Intl.NumberFormat('zh-HK');
 function tabCount(id,text,description){const badge=$(id);badge.textContent=text;badge.title=description;badge.setAttribute('aria-label',description);}
 function eventTabCount(events){const total=events.chance.length+events.fate.length;tabCount('events-tab-count',`${countFormat.format(total)} 項`,`已儲存 ${events.chance.length} 項機會、${events.fate.length} 項命運`);}
+function setThemeCardPlayback(active){document.querySelectorAll('.theme-card-frame').forEach(frame=>{if(active){if(!frame.getAttribute('src'))frame.src=frame.dataset.previewSrc;}else frame.removeAttribute('src');});}
 function setTab(name) {
+  setThemeCardPlayback(name==='themes');
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   if(name!=='sounds')$('sound-preview').pause();
   if(name!=='themes'){$('theme-preview-audio').pause();$('theme-preview-video').pause();}
@@ -22,6 +24,7 @@ document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click',
   refresh().catch(e => notice(e.message, true));
 }));
 async function showAuth() {
+  setThemeCardPlayback(false);
   $('theme-preview-audio').pause();$('theme-preview-video').pause();
   setupRequired = (await api('/api/status')).setupRequired;
   $('auth').hidden = false; $('workspace').hidden = true; $('logout').hidden = true;
@@ -341,7 +344,7 @@ form('save-sounds',async()=>{
 
 let selectedTheme='basic';
 function previewTheme(id){
-  selectedTheme=id;const theme=themeById(id);
+  selectedTheme=id;const theme=themeById(id);$('open-theme-preview').href='theme-preview.html?theme='+theme.id;
   $('theme-preview-title').textContent=theme.icon+' '+theme.name+'預覽';
   const audio=$('theme-preview-audio'),video=$('theme-preview-video');audio.pause();video.pause();
   audio.src=theme.music;video.src=theme.video;
@@ -355,9 +358,11 @@ async function loadThemes(){
     input.addEventListener('change',()=>{if(input.checked)previewTheme(theme.id);});
     const title=node('strong',theme.icon+' '+theme.name),palette=node('span',undefined,'theme-palette');palette.setAttribute('aria-hidden','true');
     for(const color of theme.colors){const chip=node('span');chip.style.background=color;palette.append(chip);}
-    const preview=node('img');preview.src='theme-media/'+theme.id+'-preview.svg';preview.alt=theme.name+'主頁預覽';preview.className='theme-card-image';preview.loading='lazy';
+    const preview=node('span',undefined,'theme-card-scene'),frame=node('iframe');frame.className='theme-card-frame';frame.title=theme.name+'實景預覽（示範學生）';frame.dataset.previewSrc='theme-preview.html?theme='+theme.id;frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');preview.append(frame);
+    new ResizeObserver(entries=>{const width=entries[0].contentRect.width;frame.style.transform=`scale(${width/1280})`;}).observe(preview);
     card.append(input,title,preview,palette,node('span',theme.description));return card;
   }));
+  setThemeCardPlayback(!$('tab-themes').hidden);
   previewTheme(saved.theme);$('active-theme').textContent='目前使用：'+themeById(saved.theme).name;
   tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);
 }
