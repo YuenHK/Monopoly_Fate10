@@ -219,6 +219,8 @@ for (const backend of ['SQLite','PostgreSQL']) {
         for(const theme of ['unknown','https://evil.example/video.mp4','<script>',null])assert.equal((await call('/api/theme',{theme},'PUT')).status,400);
         assert.deepEqual((await call('/api/theme')).body,{theme:'dog'});
         for(const file of THEME_MEDIA){const r=await fetch(origin+'/theme-media/'+file,{method:'HEAD'});assert.equal(r.status,200,file);assert.ok(Number(r.headers.get('content-length'))>100,file);}
+        const preview=await fetch(origin+'/theme-preview.html?theme=cat');assert.equal(preview.status,200);assert.equal(preview.headers.get('x-frame-options'),'SAMEORIGIN');assert.match(preview.headers.get('content-security-policy'),/connect-src 'none'/);assert.match(preview.headers.get('content-security-policy'),/frame-ancestors 'self'/);const previewHTML=await preview.text();assert.match(previewHTML,/theme-preview.js/);assert.doesNotMatch(previewHTML,/src="app.js/);
+        const adminPage=await fetch(origin+'/admin.html');assert.equal(adminPage.headers.get('x-frame-options'),'DENY');
         const range=await fetch(origin+'/theme-media/cat.mp4',{headers:{range:'bytes=0-15'}});assert.equal(range.status,206);assert.equal((await range.arrayBuffer()).byteLength,16);
         await call('/api/theme',{theme:'cat'},'PUT');
       });
