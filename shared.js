@@ -1,4 +1,15 @@
 export const $ = id => document.getElementById(id);
+export const apiOrigin = () => globalThis.MONOPOLY_API_ORIGIN || '';
+export async function playApi(path, data, method = data === undefined ? 'GET' : 'POST') {
+  const response = await fetch(apiOrigin() + path.replace(/^\/api\//, '/api/play/'), {
+    method, credentials: 'omit', cache: 'no-store',
+    ...(data === undefined ? {} : {headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+  });
+  let result;
+  try { result = await response.json(); } catch { throw new Error('伺服器正在喚醒或暫時未能回應，請稍後重新載入'); }
+  if (!response.ok) throw Object.assign(new Error(result.error || '操作失敗'), {status:response.status});
+  return result;
+}
 export async function api(path, data, method = data === undefined ? 'GET' : 'POST') {
   const response = await fetch(path, {
     method, credentials: 'same-origin', cache: 'no-store',
@@ -36,7 +47,7 @@ export function form(id, callback) {
 }
 export function avatar(avatarId, name, className = 'avatar') {
   if (!avatarId) return node('div', '🐱', className + ' fallback');
-  const img = document.createElement('img'); img.className = className; img.src = '/media/' + encodeURIComponent(avatarId); img.alt = name + '的頭像';
+  const img = document.createElement('img'); img.className = className; img.src = apiOrigin() + '/media/' + encodeURIComponent(avatarId); img.alt = name + '的頭像';
   img.addEventListener('error', () => img.replaceWith(node('div', '🐱', className + ' fallback')), { once: true });
   return img;
 }

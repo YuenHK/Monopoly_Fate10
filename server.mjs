@@ -74,6 +74,7 @@ export async function createApplication(options = {}) {
   const importPreviews = new Map();
   const secure = options.secureCookies ?? process.env.COOKIE_SECURE === 'true';
   const appOrigin = options.origin || process.env.APP_ORIGIN || process.env.RENDER_EXTERNAL_URL;
+  const publicAppOrigin = options.publicOrigin || process.env.PUBLIC_APP_ORIGIN;
   async function transaction(fn) {
     (await db.exec('BEGIN IMMEDIATE'));
     try { const value = await fn(); (await db.exec('COMMIT')); return value; }
@@ -206,13 +207,26 @@ export async function createApplication(options = {}) {
       const url = new URL(req.url, 'http://localhost');
       const path = decodeURIComponent(url.pathname);
       const method = req.method;
+      const publicPlay = path.startsWith('/api/play/');
+      const allowedPlayOrigin = req.headers.origin && [appOrigin, publicAppOrigin].filter(Boolean).includes(req.headers.origin);
+      if (publicPlay && req.headers.origin) {
+        const sameOrigin = req.headers.origin === (appOrigin || `${secure ? 'https' : 'http'}://${req.headers.host}`);
+        if (!sameOrigin && !allowedPlayOrigin) fail(403, '不接受來自其他網站的操作');
+        res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+        res.setHeader('Vary', 'Origin');
+        if (method === 'OPTIONS') {
+          res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+          res.writeHead(204); return res.end();
+        }
+      }
       if (!['GET', 'HEAD', 'POST', 'PUT', 'DELETE'].includes(method)) fail(405, '不支援的操作');
       if (!['GET', 'HEAD'].includes(method)) {
         if (req.headers.origin) {
           const expected = appOrigin || `${secure ? 'https' : 'http'}://${req.headers.host}`;
-          if (req.headers.origin !== expected) fail(403, '不接受來自其他網站的操作');
+          if (req.headers.origin !== expected && !(publicPlay && allowedPlayOrigin)) fail(403, '不接受來自其他網站的操作');
         }
-        if (req.headers['sec-fetch-site'] === 'cross-site') fail(403, '不接受跨網站操作');
+        if (req.headers['sec-fetch-site'] === 'cross-site' && !(publicPlay && allowedPlayOrigin)) fail(403, '不接受跨網站操作');
       }
       if (path === '/healthz' && method === 'GET') return json(res, { ok: true });
       if (path === '/api/status' && method === 'GET') return json(res, { setupRequired: !(await setting('password')) });
@@ -271,6 +285,28 @@ export async function createApplication(options = {}) {
         const avatarId = id();
         (await transaction(async () => { (await run("DELETE FROM avatars WHERE student_id=? AND status='pending'", s.id)); (await run('INSERT INTO avatars VALUES(?,?,?,?,?,?)', avatarId, s.id, mimes[meta.format], bytes, 'pending', now())); }));
         return json(res, { ok: true, id: avatarId, status: 'pending' }, 201);
+      }
+      if (publicPlay) {
+        if (!(await setting('password'))) fail(503, '教師尚未完成網站設定');
+        let match;
+        if (path === '/api/play/classes' && method === 'GET') return json(res, await all('SELECT c.id,c.name,(SELECT count(*) FROM students WHERE class_id=c.id AND active=1) AS student_count FROM classes c WHERE archived=0 ORDER BY name'));
+        if (path === '/api/play/sounds' && method === 'GET') return json(res, {items:(await soundState()).items.filter(s=>s.enabled).map(({id,name,url})=>({id,name,url,enabled:true}))});
+        if ((match = path.match(/^\/api\/play\/classes\/([^/]+)\/game$/)) && method === 'POST') {
+          return json(res, await transaction(async()=>{
+            const l=await classRecord(match[1]),students=await roster(l.class_id);
+            if(!students.length)fail(400,'請先加入學生');
+            return {id:l.id,class_id:l.class_id,class_name:(await classRow(l.class_id)).name,closed:l.closed,must_student:l.must_student,students,board:await boardFor(l,students)};
+          }));
+        }
+        if ((match = path.match(/^\/api\/play\/classes\/([^/]+)\/draw$/)) && method === 'POST') {
+          limit('public-draw:'+match[1],120,60e3);
+          const b=await body(req), l=await transaction(()=>classRecord(match[1]));
+          return json(res, await drawRecord(l.id,b));
+        }
+        if ((match = path.match(/^\/api\/play\/lessons\/([^/]+)$/)) && method === 'GET') {
+          const l=await lessonRow(match[1]);await classRow(l.class_id);return json(res,{class_id:l.class_id});
+        }
+        fail(404,'找不到這個操作');
       }
       if (path.startsWith('/api/')) {
         (await auth(req));
