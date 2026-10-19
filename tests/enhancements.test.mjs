@@ -65,7 +65,7 @@ for(const backend of ['SQLite','PostgreSQL'])test(`${backend}: preferences, reve
       const stored=await app.db.get('SELECT bytes FROM avatars WHERE id=?',avatarId);assert.deepEqual(Buffer.from(stored.bytes),gif);
     });
     await t.test('export includes all classroom data and excludes teacher credentials and sessions',async()=>{
-      assert.equal((await call('/api/backup/export',undefined,'GET',false)).status,401);const exported=await call('/api/backup/export');assert.equal(exported.status,200);backup=JSON.parse(gunzipSync(exported.body));assert.equal(backup.format,'Monopoly_Fate10');assert.ok(backup.data.avatars.length);assert.ok(backup.data.draws.some(d=>d.voided));assert.equal(backup.data.classes.find(c=>c.id===classId).theme,'dog');
+      assert.equal((await call('/api/backup/export',undefined,'GET',false)).status,401);const exported=await call('/api/backup/export');assert.equal(exported.status,200);backup=JSON.parse(gunzipSync(exported.body));assert.equal(backup.format,'Monopoly_Fate10');const totals=(await call('/api/backup/summary')).body;assert.equal(totals.students,backup.data.students.length);assert.equal(totals.draws,backup.data.draws.length);assert.ok(backup.data.avatars.length);assert.ok(backup.data.draws.some(d=>d.voided));assert.equal(backup.data.classes.find(c=>c.id===classId).theme,'dog');
       assert.equal(backup.data.logins,undefined);for(const k of ['password','salt','legacyImported'])assert.equal(backup.data.settings.some(s=>s.key===k),false);assert.ok(backup.data.settings.some(s=>s.key==='soundCatalog'));
     });
     await t.test('malformed, credential-bearing and broken-reference backups cannot alter data',async()=>{
