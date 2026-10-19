@@ -18,3 +18,5 @@
 .game-page:is([data-theme=cat],[data-theme=dog]) .result-name{color:var(--blue)}
 
 .theme-card-image{display:block;grid-column:1/-1;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top;border:1px solid var(--line);border-radius:8px}
+
+.theme-card-scene{display:block;position:relative;grid-column:1/-1;width:100%;aspect-ratio:1280/840;overflow:hidden;border:1px solid var(--line);border-radius:8px;pointer-events:none}.theme-card-frame{position:absolute;inset:0;width:1280px;height:840px;border:0;transform-origin:top left;pointer-events:none}
