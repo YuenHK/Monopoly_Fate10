@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import { PGlite } from '@electric-sql/pglite';
 import { mergeClassRecords } from '../class-records.mjs';
 import { createApplication } from '../server.mjs';
+import { THEME_MEDIA } from '../themes.js';
 
 const password = 'testing-teacher-password-2026';
 async function postgresAdapter() {
@@ -205,6 +206,22 @@ for (const backend of ['SQLite','PostgreSQL']) {
         assert.equal((await call(`/api/play/classes/${c}/draw`,{mode:'quick',requestId:'archived'},'POST',false,headers)).status,404);
         await app.db.run('DELETE FROM draws WHERE lesson_id=?',game.body.id);
       });
+      await t.test('teacher theme selection persists and public clients can only read preset IDs',async()=>{
+        assert.deepEqual((await call('/api/theme')).body,{theme:'basic'});
+        assert.deepEqual((await call('/api/play/theme',undefined,'GET',false,{origin:publicOrigin})).body,{theme:'basic'});
+        assert.equal((await call('/api/theme',{theme:'cat'},'PUT',false)).status,401);
+        assert.equal((await call('/api/play/theme',{theme:'cat'},'PUT',false,{origin:publicOrigin})).status,404);
+        for(const theme of ['cat','dog']){
+          assert.equal((await call('/api/theme',{theme},'PUT')).status,200);
+          const current=await call('/api/play/theme',undefined,'GET',false,{origin:publicOrigin});
+          assert.equal(current.status,200);assert.equal(current.res.headers.get('access-control-allow-origin'),publicOrigin);assert.deepEqual(current.body,{theme});
+        }
+        for(const theme of ['unknown','https://evil.example/video.mp4','<script>',null])assert.equal((await call('/api/theme',{theme},'PUT')).status,400);
+        assert.deepEqual((await call('/api/theme')).body,{theme:'dog'});
+        for(const file of THEME_MEDIA){const r=await fetch(origin+'/theme-media/'+file,{method:'HEAD'});assert.equal(r.status,200,file);assert.ok(Number(r.headers.get('content-length'))>100,file);}
+        const range=await fetch(origin+'/theme-media/cat.mp4',{headers:{range:'bytes=0-15'}});assert.equal(range.status,206);assert.equal((await range.arrayBuffer()).byteLength,16);
+        await call('/api/theme',{theme:'cat'},'PUT');
+      });
       await t.test('logout revokes teacher session',async()=>{
         await call('/api/logout',{});assert.equal((await call('/api/avatars')).status,401);
       });
@@ -212,7 +229,7 @@ for (const backend of ['SQLite','PostgreSQL']) {
     if(backend==='SQLite'){
       const restarted=await createApplication({dataDir});
       restarted.server.listen(0,'127.0.0.1');await once(restarted.server,'listening');
-      try{assert.equal(restarted.setupRequired,false);assert.equal((await restarted.db.get('SELECT count(*) AS n FROM draws')).n,122);assert.equal((await restarted.db.get("SELECT value FROM settings WHERE key='events'")).value.includes('新的機會'),true);}
+      try{assert.equal(restarted.setupRequired,false);assert.equal((await restarted.db.get('SELECT count(*) AS n FROM draws')).n,122);assert.equal((await restarted.db.get("SELECT value FROM settings WHERE key='events'")).value.includes('新的機會'),true);assert.equal((await restarted.db.get("SELECT value FROM settings WHERE key='theme'")).value,'cat');}
       finally{await restarted.close();}
     }
     await rm(dataDir,{recursive:true,force:true});
