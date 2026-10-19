@@ -1,0 +1,27 @@
+{
+  "name": "monopoly-fate-classroom",
+  "version": "2.4.3",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "pg": "^8.23.1",
+    "sharp": "^0.35.5",
+    "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

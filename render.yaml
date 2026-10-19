@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: monopoly-fate-classroom
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: '24'
+      - key: HOST
+        value: 0.0.0.0
+      - key: COOKIE_SECURE
+        value: 'true'
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
