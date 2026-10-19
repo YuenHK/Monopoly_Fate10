@@ -59,7 +59,7 @@ for(const backend of ['SQLite','PostgreSQL'])test(`${backend}: bulk import, expo
   });
   await t.test('name, CLASS, NO and GROUP edits preserve avatar and historical class statistics',async()=>{
    lessonId=(await call('/api/lessons',{classId:group.id,name:'舊課堂'})).result.id;
-   await app.db.run('INSERT INTO draws VALUES(?,?,?,?,?,?,?,?,?,?)',randomUUID(),lessonId,'student',student.id,'4A 2 甲同學','2',null,'2026-10-19T02:00:00.000Z',randomUUID(),null);
+   await app.db.run('INSERT INTO draws(id,lesson_id,kind,student_id,student_name,student_number,event_text,created,request_id,animation) VALUES(?,?,?,?,?,?,?,?,?,?)',randomUUID(),lessonId,'student',student.id,'4A 2 甲同學','2',null,'2026-10-19T02:00:00.000Z',randomUUID(),null);
    avatarId=randomUUID();await app.db.run('INSERT INTO avatars VALUES(?,?,?,?,?,?)',avatarId,student.id,'image/gif',Buffer.from('kept-avatar'),'approved','2026-10-19T02:00:00.000Z');
    const response=await fetch(base+'/api/roster/export',{headers:{cookie}});const wb=new ExcelJS.Workbook();await wb.xlsx.load(Buffer.from(await response.arrayBuffer()));
    const sheet=wb.worksheets[0];sheet.eachRow((row,n)=>{if(n>1&&row.getCell(5).value===student.id){row.getCell(1).value='Maker';row.getCell(2).value='4C';row.getCell(3).value=8;row.getCell(4).value='甲同學修訂';}});
