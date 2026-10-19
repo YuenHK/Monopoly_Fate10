@@ -3,7 +3,11 @@ import { themeById } from './themes.js';
 const theme=themeById(new URLSearchParams(location.search).get('theme'));
 document.body.dataset.theme=theme.id;
 const video=document.getElementById('theme-video');video.src=theme.video;
-if(!matchMedia('(prefers-reduced-motion: reduce)').matches){video.autoplay=true;video.play().catch(()=>{});}
+function playback(playing){const active=playing&&!matchMedia('(prefers-reduced-motion: reduce)').matches;video.autoplay=active;video.preload='auto';if(active)video.play().catch(()=>{});else video.pause();}
+const report=()=>{if(parent!==window)parent.postMessage({type:'theme-preview-status',playing:!video.paused&&video.readyState>=2},location.origin);};
+for(const event of ['play','pause','loadeddata','canplay','error'])video.addEventListener(event,report);
+playback(new URLSearchParams(location.search).get('play')!=='0');
+window.addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='theme-preview-play')playback(event.data.playing===true);});
 const board=document.getElementById('board-container');
 const width=12,height=10;board.style.gridTemplateColumns=`repeat(${width},minmax(0,1fr))`;board.style.gridTemplateRows=`repeat(${height},minmax(0,1fr))`;board.style.setProperty('--board-rows',height);
 function position(i){if(i<width)return[1,i+1];if(i<width+height-1)return[i-width+2,width];if(i<2*width+height-2)return[height,width-(i-(width+height-2))];return[height-(i-(2*width+height-3)),1];}

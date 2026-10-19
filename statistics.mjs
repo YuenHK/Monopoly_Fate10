@@ -22,7 +22,7 @@ export function periodRange(period = 'all', value, current = new Date()) {
 }
 export function countTimeline(draws, range) {
   const counts = new Map();
-  for (const d of draws) if (d.kind === 'student') {
+  for (const d of draws) if (d.kind === 'student' && !d.voided) {
     const key = dayKey(d.created).slice(0,range.period === 'all' ? 7 : 10);
     counts.set(key,(counts.get(key)||0)+1);
   }

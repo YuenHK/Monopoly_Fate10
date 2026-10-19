@@ -10,17 +10,20 @@ const kindLabel = { student: '學生', chance: '機會', fate: '命運' };
 const countFormat=new Intl.NumberFormat('zh-HK');
 function tabCount(id,text,description){const badge=$(id);badge.textContent=text;badge.title=description;badge.setAttribute('aria-label',description);}
 function eventTabCount(events){const total=events.chance.length+events.fate.length;tabCount('events-tab-count',`${countFormat.format(total)} 項`,`已儲存 ${events.chance.length} 項機會、${events.fate.length} 項命運`);}
-function setThemeCardPlayback(active){document.querySelectorAll('.theme-card-frame').forEach(frame=>{if(active){if(!frame.getAttribute('src'))frame.src=frame.dataset.previewSrc;}else frame.removeAttribute('src');});}
+function setThemeCardPlayback(active){document.querySelectorAll('.theme-card-frame').forEach(frame=>{
+  if(active){if(!frame.getAttribute('src'))frame.src=frame.dataset.previewSrc+'&play='+(frame.dataset.theme===selectedTheme?'1':'0');else frame.contentWindow?.postMessage({type:'theme-preview-play',playing:frame.dataset.theme===selectedTheme},location.origin);}
+  else frame.removeAttribute('src');
+});}
 function setTab(name) {
   setThemeCardPlayback(name==='themes');
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   if(name!=='sounds')$('sound-preview').pause();
   if(name!=='themes'){$('theme-preview-audio').pause();$('theme-preview-video').pause();}
-  for (const tab of ['classes', 'statistics', 'avatars', 'sounds', 'themes', 'events']) $('tab-' + tab).hidden = tab !== name;
+  for (const tab of ['classes', 'statistics', 'avatars', 'sounds', 'themes', 'events', 'backup']) $('tab-' + tab).hidden = tab !== name;
 }
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
   setTab(b.dataset.tab);
-  const refresh = b.dataset.tab === 'avatars' ? loadAvatars : b.dataset.tab === 'statistics' ? loadStatsClasses : async () => {};
+  const refresh = b.dataset.tab === 'avatars' ? loadAvatars : b.dataset.tab === 'statistics' ? loadStatsClasses : b.dataset.tab === 'themes' ? loadThemes : async () => {};
   refresh().catch(e => notice(e.message, true));
 }));
 async function showAuth() {
@@ -56,6 +59,7 @@ $('logout').addEventListener('click', async () => { try { await api('/api/logout
 async function loadClasses() {
   classes = await api('/api/classes');
   const totalStudents=classes.reduce((sum,c)=>sum+Number(c.student_count),0);
+  tabCount('backup-tab-count',`${countFormat.format(totalStudents)} 人`,'完整備份包含全部班別及歷史資料');
   tabCount('classes-tab-count',`${classes.length} 班 · ${countFormat.format(totalStudents)} 人`,`使用中 ${classes.length} 個班別、${totalStudents} 位學生`);
   options($('class-select'), classes, '選擇要管理的班別', c => `${c.name} · ${c.student_count} 人`);
 
@@ -82,7 +86,8 @@ async function loadRoster() {
   renderClassList();$('roster-editor').hidden=!classId;$('roster-empty').hidden=Boolean(classId);
   if(!classId){students=[];return;}
   const result=await api(`/api/classes/${classId}/students`);if(revision!==rosterRevision)return;
-  students=result;$('selected-class-name').textContent=classes.find(c=>c.id===classId)?.name||'';
+  students=result;const prefs=await api(`/api/classes/${classId}/preferences`);if(revision!==rosterRevision)return;$('class-draw-mode').value=prefs.drawMode;$('class-theme').value=prefs.theme||'';
+  $('selected-class-name').textContent=classes.find(c=>c.id===classId)?.name||'';
   $('selected-class-count').textContent=`${students.length} 位學生 · 每位同學都有機會抽中`;
   $('start-class').href='/?class='+encodeURIComponent(classId);
   $('export-current-roster').href='/api/roster/export?classId='+encodeURIComponent(classId);
@@ -241,7 +246,11 @@ async function loadClassStats() {
   $('class-stats-rows').replaceChildren();
   for(const s of result.students){const tr=node('tr');tr.append(node('td',s.number),node('td',studentDisplay(s)+(s.active?'':'（已移出名單）')),node('td',s.count));$('class-stats-rows').append(tr);}
   $('class-history-rows').replaceChildren();
-  for(const d of result.draws.slice(0,100)){const tr=node('tr');tr.append(node('td',date(d.created)),node('td',kindLabel[d.kind]),node('td',d.kind==='student'?`${d.student_number} · ${d.student_name}`:d.event_text));$('class-history-rows').append(tr);}
+  for(const d of result.draws.slice(0,100)){
+    const tr=node('tr'),actions=node('td');actions.append(button(d.voided?'恢復計入':'不計入統計',async()=>{
+      notice('');voidTarget=d;$('void-draw-title').textContent=d.voided?'恢復計入統計':'標記不計入統計';$('void-reason-label').hidden=Boolean(d.voided);$('void-reason').required=!d.voided;$('void-reason').value='誤按抽籤';$('void-draw-dialog').showModal();
+    }));tr.append(node('td',date(d.created)),node('td',kindLabel[d.kind]),node('td',d.kind==='student'?`${d.student_number} · ${d.student_name}`:d.event_text),node('td',d.voided?'不計入：'+d.void_reason:'計入統計'),actions);$('class-history-rows').append(tr);
+  }
 }
 for(const id of ['stats-class','stats-period','stats-month','stats-week'])$(id).addEventListener('change',()=>loadClassStats().catch(e=>notice(e.message,true)));
 $('refresh-class-stats').addEventListener('click',()=>loadStatsClasses().catch(e=>notice(e.message,true)));
@@ -251,7 +260,7 @@ $('export-class-stats').addEventListener('click',()=>{
 });
 $('export-class-history').addEventListener('click',()=>{
   if(!classStats)return;const s=classStats;
-  downloadCSV(s.class.name+'-'+s.range.label+'-抽籤紀錄.csv',[['班別','範圍','時間（香港）','類型','學號','學生','事件'],...s.draws.map(d=>[s.class.name,s.range.label,date(d.created),kindLabel[d.kind],d.student_number,d.student_name,d.event_text])]);
+  downloadCSV(s.class.name+'-'+s.range.label+'-抽籤紀錄.csv',[['班別','範圍','時間（香港）','類型','學號','學生','事件','計入統計','取消原因'],...s.draws.map(d=>[s.class.name,s.range.label,date(d.created),kindLabel[d.kind],d.student_number,d.student_name,d.event_text,d.voided?'否':'是',d.void_reason])]);
 });
 function clearImportPreview() {
   rosterPreview=null;$('import-preview').hidden=true;$('import-preview-rows').replaceChildren();
@@ -344,31 +353,37 @@ form('save-sounds',async()=>{
 
 let selectedTheme='basic';
 function previewTheme(id){
-  selectedTheme=id;const theme=themeById(id);$('open-theme-preview').href='theme-preview.html?theme='+theme.id;
+  selectedTheme=id;setThemeCardPlayback(!$('tab-themes').hidden);const theme=themeById(id);$('open-theme-preview').href='theme-preview.html?theme='+theme.id;
   $('theme-preview-title').textContent=theme.icon+' '+theme.name+'預覽';
   const audio=$('theme-preview-audio'),video=$('theme-preview-video');audio.pause();video.pause();
   audio.src=theme.music;video.src=theme.video;
-  document.querySelectorAll('.theme-option').forEach(card=>card.classList.toggle('selected',card.dataset.theme===id));
+  document.querySelectorAll('.theme-option').forEach(card=>{const active=card.dataset.theme===id;card.classList.toggle('selected',active);card.querySelector('input').checked=active;});
 }
 async function loadThemes(){
-  const saved=await api('/api/theme');
+  const global=await api('/api/theme');let scope=$('theme-scope').value;if(!classes.some(c=>c.id===scope))scope='';
+  $('theme-scope').replaceChildren(new Option('全站預設',''),...classes.map(c=>new Option(c.name,c.id)));$('theme-scope').value=scope;
+  const prefs=scope?await api('/api/classes/'+scope+'/preferences'):null,saved={theme:prefs?.theme||global.theme};
+  $('inherit-theme-label').hidden=!scope;$('inherit-theme').checked=Boolean(scope&&!prefs?.theme);
   $('theme-options').replaceChildren(...THEMES.map(theme=>{
     const card=node('label',undefined,'theme-option');card.dataset.theme=theme.id;
     const input=document.createElement('input');input.type='radio';input.name='theme';input.value=theme.id;input.checked=theme.id===saved.theme;
-    input.addEventListener('change',()=>{if(input.checked)previewTheme(theme.id);});
+    input.addEventListener('change',()=>{if(input.checked){$('inherit-theme').checked=false;previewTheme(theme.id);}});
     const title=node('strong',theme.icon+' '+theme.name),palette=node('span',undefined,'theme-palette');palette.setAttribute('aria-hidden','true');
     for(const color of theme.colors){const chip=node('span');chip.style.background=color;palette.append(chip);}
-    const preview=node('span',undefined,'theme-card-scene'),frame=node('iframe');frame.className='theme-card-frame';frame.title=theme.name+'實景預覽（示範學生）';frame.dataset.previewSrc='theme-preview.html?theme='+theme.id;frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');preview.append(frame);
+    const preview=node('span',undefined,'theme-card-scene'),frame=node('iframe');frame.className='theme-card-frame';frame.title=theme.name+'實景預覽（示範學生）';frame.dataset.previewSrc='theme-preview.html?theme='+theme.id;frame.dataset.theme=theme.id;frame.addEventListener('load',()=>frame.contentWindow?.postMessage({type:'theme-preview-play',playing:!$('tab-themes').hidden&&frame.dataset.theme===selectedTheme},location.origin));frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');preview.append(frame);
     new ResizeObserver(entries=>{const width=entries[0].contentRect.width;frame.style.transform=`scale(${width/1280})`;}).observe(preview);
-    card.append(input,title,preview,palette,node('span',theme.description));return card;
+    const state=node('small','影片載入中','theme-play-state');state.setAttribute('aria-live','polite');
+    card.append(input,title,preview,state,palette,node('span',theme.description));return card;
   }));
   setThemeCardPlayback(!$('tab-themes').hidden);
-  previewTheme(saved.theme);$('active-theme').textContent='目前使用：'+themeById(saved.theme).name;
+  previewTheme(saved.theme);$('active-theme').textContent=($('theme-scope').value?'這班':'全站預設')+'目前使用：'+themeById(saved.theme).name+($('theme-scope').value&&$('inherit-theme').checked?'（沿用全站預設）':'');
   tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);
 }
 form('save-theme',async()=>{
-  const saved=await api('/api/theme',{theme:selectedTheme},'PUT');
-  $('active-theme').textContent='目前使用：'+themeById(saved.theme).name;
+  const scope=$('theme-scope').value;
+  const saved=scope?await api('/api/classes/'+scope+'/preferences',{theme:$('inherit-theme').checked?null:selectedTheme},'PUT'):await api('/api/theme',{theme:selectedTheme},'PUT');
+  if(!saved.theme)saved.theme=(await api('/api/theme')).theme;
+  $('active-theme').textContent=($('theme-scope').value?'這班':'全站預設')+'目前使用：'+themeById(saved.theme).name+($('theme-scope').value&&$('inherit-theme').checked?'（沿用全站預設）':'');
   tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);
   notice('已套用'+themeById(saved.theme).name+'；前台會在下次操作或約 30 秒內更新');
   if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.postMessage('updated');channel.close();}
@@ -378,5 +393,40 @@ $('preview-theme-effect').addEventListener('click',()=>{
   $('theme-effect-caption').textContent=theme.icon+' '+theme.name+'：'+(theme.effect==='confetti'?'經典彩炮':theme.effect==='cats'?'不同貓咪噴發':'不同狗狗噴發');
   dialog.showModal();celebrate(dialog,theme.effect);
 });
+
+$('inherit-theme').addEventListener('change',async()=>{if($('inherit-theme').checked){try{previewTheme((await api('/api/theme')).theme);}catch(e){notice(e.message,true);}}});
+let voidTarget=null;
+form('void-draw-form',async()=>{if(!voidTarget)return;const d=voidTarget;await api('/api/draws/'+d.id+'/void',{voided:!d.voided,reason:d.voided?'':$('void-reason').value},'PUT');$('void-draw-dialog').close();await loadClassStats();await refreshCountBadges();notice(d.voided?'已恢復計入統計':'已標記不計入統計，原始紀錄保留');});
+window.addEventListener('message',event=>{if(event.origin!==location.origin||event.data?.type!=='theme-preview-status')return;for(const frame of document.querySelectorAll('.theme-card-frame'))if(event.source===frame.contentWindow){const state=frame.closest('.theme-option').querySelector('.theme-play-state');state.textContent=event.data.playing?'背景影片播放中':'背景影片已暫停';}});
+$('theme-scope').addEventListener('change',()=>loadThemes().catch(e=>notice(e.message,true)));
+form('save-class-preferences',async()=>{await api('/api/classes/'+$('class-select').value+'/preferences',{drawMode:$('class-draw-mode').value,theme:$('class-theme').value||null},'PUT');notice('班別抽籤方式及主題已儲存');if('BroadcastChannel' in window){const c=new BroadcastChannel('monopoly-theme');c.postMessage('updated');c.close();}});
+async function refreshCountBadges(){const rows=await api('/api/classes?includeArchived=1');updateStatsBadge(rows);}
+function saveBlob(blob,filename){const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+async function downloadBackup(path,filename){const r=await fetch(path,{credentials:'same-origin',cache:'no-store'});if(!r.ok){const e=await r.json();throw new Error(e.error||'備份未能下載');}saveBlob(await r.blob(),filename);}
+$('export-qr-links').addEventListener('click',()=>{if(!students.length)return notice('這班沒有學生',true);notice('');$('qr-links-dialog').showModal();});
+form('generate-qr-links',async()=>{
+  const b=$('export-qr-links');b.disabled=true;
+  try{
+    const links=await api('/api/classes/'+$('class-select').value+'/links',{format:'qr'}),name=classes.find(c=>c.id===$('class-select').value)?.name||'班別';
+    const doc=document.implementation.createHTMLDocument(name+' 頭像 QR Code 卡');doc.documentElement.lang='zh-HK';const meta=doc.createElement('meta');meta.setAttribute('charset','utf-8');doc.head.prepend(meta);
+    const style=doc.createElement('style');style.textContent='body{font-family:-apple-system,BlinkMacSystemFont,"PingFang TC",sans-serif;margin:20px}main{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}article{border:1px solid #999;padding:14px;text-align:center;break-inside:avoid;overflow-wrap:anywhere}img{width:100%;max-width:190px}h2{font-size:16px}p,small{font-size:12px}@page{size:A4;margin:12mm}@media print{body{margin:0}a{color:inherit;text-decoration:none}}';doc.head.append(style);
+    const title=doc.createElement('h1');title.textContent=name+' · 學生頭像提交 QR Code';const hint=doc.createElement('p');hint.textContent='每張卡只交給對應學生。請用瀏覽器列印或另存 PDF；連結到期後須重新產生。';const main=doc.createElement('main');doc.body.append(title,hint,main);
+    for(const l of links){const card=doc.createElement('article'),h=doc.createElement('h2'),img=doc.createElement('img'),caption=doc.createElement('p'),a=doc.createElement('a');h.textContent=l.display_id||l.name;img.src='data:image/svg+xml;base64,'+btoa(l.qr);img.alt='學生頭像提交 QR Code';caption.textContent='有效至（香港）：'+date(l.expires);a.href=new URL(l.path,location.origin).href;a.textContent='開啟個人頭像提交頁';card.append(h,img,caption,a);main.append(card);}
+    saveBlob(new Blob(['<!doctype html>'+doc.documentElement.outerHTML],{type:'text/html;charset=utf-8'}),name.replace(/[\\/:*?"<>|]/g,'_')+'頭像QR卡.html');$('qr-links-dialog').close();notice('已下載可列印 QR Code 卡，請把每張卡個別交給本人');
+  }catch(e){notice(e.message,true);}finally{b.disabled=false;}
+});
+let backupPreview=null;
+function clearBackupPreview(){backupPreview=null;$('backup-preview').hidden=true;$('backup-saved').checked=false;$('backup-confirmation').value='';$('restore-backup-button').disabled=true;}
+$('backup-file').addEventListener('change',clearBackupPreview);
+$('download-backup').addEventListener('click',()=>downloadBackup('/api/backup/export','Monopoly-backup-'+today()+'.json.gz').catch(e=>notice(e.message,true)));
+form('preview-backup',async()=>{
+  clearBackupPreview();const file=$('backup-file').files[0];if(!file||file.size>67*1024*1024)throw new Error('請選擇最多 67 MB 的完整備份 .json.gz');
+  const encoded=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(new Error('無法讀取備份'));r.readAsDataURL(file);});
+  backupPreview=await api('/api/backup/preview',{file:encoded});$('backup-differences').replaceChildren();for(const [key,label] of [['classes','班別'],['students','學生'],['draws','抽籤紀錄'],['avatars','頭像'],['links','學生連結']]){const row=node('tr');row.append(node('td',label),node('td',backupPreview.current[key]),node('td',backupPreview.incoming[key]));$('backup-differences').append(row);}
+  $('backup-change-list').replaceChildren(...backupPreview.differences.map(d=>{const details=node('details'),summary=node('summary',`${d.label}：新增 ${d.added}、移除 ${d.removed}、修改 ${d.changed}`);details.append(summary);for(const e of d.examples)details.append(node('p',e.before+' → '+e.after));if(d.added+d.removed+d.changed>20)details.append(node('small','只列出前 20 個差異例子。'));return details;}));
+  $('backup-expiry').textContent='預覽有效至 '+date(backupPreview.expires)+'；同數量也可能包含不同資料，還原會整份取代。';$('backup-preview').hidden=false;
+});
+$('download-safety-backup').addEventListener('click',async()=>{if(!backupPreview)return;try{await downloadBackup('/api/backup/safety/'+backupPreview.previewId,'Monopoly-before-restore-'+today()+'.json.gz');$('restore-backup-button').disabled=false;notice('現況備份已開始下載，請確認檔案已保存再還原');}catch(e){notice(e.message,true);}});
+form('restore-backup',async()=>{if(!backupPreview)return;if($('backup-confirmation').value!=='取代全部資料')throw new Error('請輸入「取代全部資料」');await api('/api/backup/restore',{previewId:backupPreview.previewId,backupSaved:$('backup-saved').checked,confirmation:$('backup-confirmation').value});clearBackupPreview();await enter();notice('完整還原完成，教師密碼保持不變');});
 
 try { await enter(); } catch(e) { if (e.status === 401) await showAuth(); else { notice(e.message,true); await showAuth(); } }
