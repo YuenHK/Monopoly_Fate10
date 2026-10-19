@@ -59,7 +59,7 @@ $('logout').addEventListener('click', async () => { try { await api('/api/logout
 async function loadClasses() {
   classes = await api('/api/classes');
   const totalStudents=classes.reduce((sum,c)=>sum+Number(c.student_count),0);
-  tabCount('backup-tab-count',`${countFormat.format(totalStudents)} 人`,'完整備份包含全部班別及歷史資料');
+  const backupCount=await api('/api/backup/summary');tabCount('backup-tab-count',`${countFormat.format(backupCount.students)} 人`,`完整備份包含 ${backupCount.classes} 個班別、${backupCount.students} 位學生（包括停用及封存資料）`);
   tabCount('classes-tab-count',`${classes.length} 班 · ${countFormat.format(totalStudents)} 人`,`使用中 ${classes.length} 個班別、${totalStudents} 位學生`);
   options($('class-select'), classes, '選擇要管理的班別', c => `${c.name} · ${c.student_count} 人`);
 
@@ -351,7 +351,7 @@ form('save-sounds',async()=>{
   if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.postMessage('updated');channel.close();}
 });
 
-let selectedTheme='basic';
+let selectedTheme='basic',themeRevision=0;
 function previewTheme(id){
   selectedTheme=id;setThemeCardPlayback(!$('tab-themes').hidden);const theme=themeById(id);$('open-theme-preview').href='theme-preview.html?theme='+theme.id;
   $('theme-preview-title').textContent=theme.icon+' '+theme.name+'預覽';
@@ -360,9 +360,9 @@ function previewTheme(id){
   document.querySelectorAll('.theme-option').forEach(card=>{const active=card.dataset.theme===id;card.classList.toggle('selected',active);card.querySelector('input').checked=active;});
 }
 async function loadThemes(){
-  const global=await api('/api/theme');let scope=$('theme-scope').value;if(!classes.some(c=>c.id===scope))scope='';
+  const revision=++themeRevision;const global=await api('/api/theme');if(revision!==themeRevision)return;let scope=$('theme-scope').value;if(!classes.some(c=>c.id===scope))scope='';
   $('theme-scope').replaceChildren(new Option('全站預設',''),...classes.map(c=>new Option(c.name,c.id)));$('theme-scope').value=scope;
-  const prefs=scope?await api('/api/classes/'+scope+'/preferences'):null,saved={theme:prefs?.theme||global.theme};
+  const prefs=scope?await api('/api/classes/'+scope+'/preferences'):null;if(revision!==themeRevision)return;const saved={theme:prefs?.theme||global.theme};
   $('inherit-theme-label').hidden=!scope;$('inherit-theme').checked=Boolean(scope&&!prefs?.theme);
   $('theme-options').replaceChildren(...THEMES.map(theme=>{
     const card=node('label',undefined,'theme-option');card.dataset.theme=theme.id;
@@ -415,18 +415,18 @@ form('generate-qr-links',async()=>{
     saveBlob(new Blob(['<!doctype html>'+doc.documentElement.outerHTML],{type:'text/html;charset=utf-8'}),name.replace(/[\\/:*?"<>|]/g,'_')+'頭像QR卡.html');$('qr-links-dialog').close();notice('已下載可列印 QR Code 卡，請把每張卡個別交給本人');
   }catch(e){notice(e.message,true);}finally{b.disabled=false;}
 });
-let backupPreview=null;
-function clearBackupPreview(){backupPreview=null;$('backup-preview').hidden=true;$('backup-saved').checked=false;$('backup-confirmation').value='';$('restore-backup-button').disabled=true;}
+let backupPreview=null,backupRevision=0;
+function clearBackupPreview(){backupRevision++;backupPreview=null;$('backup-preview').hidden=true;$('backup-saved').checked=false;$('backup-confirmation').value='';$('restore-backup-button').disabled=true;}
 $('backup-file').addEventListener('change',clearBackupPreview);
 $('download-backup').addEventListener('click',()=>downloadBackup('/api/backup/export','Monopoly-backup-'+today()+'.json.gz').catch(e=>notice(e.message,true)));
 form('preview-backup',async()=>{
-  clearBackupPreview();const file=$('backup-file').files[0];if(!file||file.size>67*1024*1024)throw new Error('請選擇最多 67 MB 的完整備份 .json.gz');
+  clearBackupPreview();const revision=backupRevision,file=$('backup-file').files[0];if(!file||file.size>67*1024*1024)throw new Error('請選擇最多 67 MB 的完整備份 .json.gz');
   const encoded=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(new Error('無法讀取備份'));r.readAsDataURL(file);});
-  backupPreview=await api('/api/backup/preview',{file:encoded});$('backup-differences').replaceChildren();for(const [key,label] of [['classes','班別'],['students','學生'],['draws','抽籤紀錄'],['avatars','頭像'],['links','學生連結']]){const row=node('tr');row.append(node('td',label),node('td',backupPreview.current[key]),node('td',backupPreview.incoming[key]));$('backup-differences').append(row);}
+  if(revision!==backupRevision)return;const result=await api('/api/backup/preview',{file:encoded});if(revision!==backupRevision)return;backupPreview=result;$('backup-differences').replaceChildren();for(const [key,label] of [['classes','班別'],['students','學生'],['draws','抽籤紀錄'],['avatars','頭像'],['links','學生連結']]){const row=node('tr');row.append(node('td',label),node('td',backupPreview.current[key]),node('td',backupPreview.incoming[key]));$('backup-differences').append(row);}
   $('backup-change-list').replaceChildren(...backupPreview.differences.map(d=>{const details=node('details'),summary=node('summary',`${d.label}：新增 ${d.added}、移除 ${d.removed}、修改 ${d.changed}`);details.append(summary);for(const e of d.examples)details.append(node('p',e.before+' → '+e.after));if(d.added+d.removed+d.changed>20)details.append(node('small','只列出前 20 個差異例子。'));return details;}));
-  $('backup-expiry').textContent='預覽有效至 '+date(backupPreview.expires)+'；同數量也可能包含不同資料，還原會整份取代。';$('backup-preview').hidden=false;
+  $('backup-expiry').textContent=file.name+' · 預覽有效至 '+date(backupPreview.expires)+'；同數量也可能包含不同資料，還原會整份取代。';$('backup-preview').hidden=false;
 });
-$('download-safety-backup').addEventListener('click',async()=>{if(!backupPreview)return;try{await downloadBackup('/api/backup/safety/'+backupPreview.previewId,'Monopoly-before-restore-'+today()+'.json.gz');$('restore-backup-button').disabled=false;notice('現況備份已開始下載，請確認檔案已保存再還原');}catch(e){notice(e.message,true);}});
-form('restore-backup',async()=>{if(!backupPreview)return;if($('backup-confirmation').value!=='取代全部資料')throw new Error('請輸入「取代全部資料」');await api('/api/backup/restore',{previewId:backupPreview.previewId,backupSaved:$('backup-saved').checked,confirmation:$('backup-confirmation').value});clearBackupPreview();await enter();notice('完整還原完成，教師密碼保持不變');});
+$('download-safety-backup').addEventListener('click',async()=>{if(!backupPreview)return;const previewId=backupPreview.previewId;try{await downloadBackup('/api/backup/safety/'+previewId,'Monopoly-before-restore-'+today()+'.json.gz');if(backupPreview?.previewId!==previewId)return;$('restore-backup-button').disabled=false;notice('現況備份已開始下載，請確認檔案已保存再還原');}catch(e){notice(e.message,true);}});
+form('restore-backup',async()=>{if(!backupPreview)return;if($('backup-confirmation').value!=='取代全部資料')throw new Error('請輸入「取代全部資料」');await api('/api/backup/restore',{previewId:backupPreview.previewId,backupSaved:$('backup-saved').checked,confirmation:$('backup-confirmation').value});clearBackupPreview();await enter();notice('完整還原完成，教師密碼保持不變；其他前台請重新選擇班別');});
 
 try { await enter(); } catch(e) { if (e.status === 401) await showAuth(); else { notice(e.message,true); await showAuth(); } }

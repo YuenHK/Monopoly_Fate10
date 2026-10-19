@@ -326,11 +326,13 @@ export async function createApplication(options = {}) {
       if (path.startsWith('/api/')) {
         (await auth(req));
         function backupFile(data){const bytes=packBackup(data);res.writeHead(200,{'Content-Type':'application/gzip','Content-Disposition':'attachment; filename="Monopoly-backup-'+new Date().toISOString().slice(0,10)+'.json.gz"','Content-Length':bytes.length,'Cache-Control':'no-store'});res.end(bytes);}
+        if(path==='/api/backup/summary'&&method==='GET'){const summary={};for(const table of ['classes','students','draws','avatars','links'])summary[table]=Number((await get(`SELECT count(*) AS n FROM ${table}`)).n);return json(res,summary);}
         if(path==='/api/backup/export'&&method==='GET')return backupFile(await transaction(()=>backupSnapshot(db)));
         if(path==='/api/backup/preview'&&method==='POST'){
           const b=await body(req,92*1024*1024),data=await validateBackup(unpackBackup(b.file));
           const current=await backupSnapshot(db),previewId=secret(),expires=Date.now()+10*60e3;
           backupPreviews.clear();backupPreviews.set(previewId,{data,fingerprint:snapshotDigest(current),expires,safetyDownloaded:false});
+          setTimeout(()=>backupPreviews.delete(previewId),Math.max(0,expires-Date.now())).unref();
           return json(res,{previewId,expires,current:backupSummary(current),incoming:backupSummary(data),differences:backupDifferences(current,data)});
         }
         if(path.startsWith('/api/backup/safety/')&&method==='GET'){
