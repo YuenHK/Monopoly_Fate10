@@ -5,6 +5,8 @@ import { mkdirSync, readFileSync, statSync, createReadStream } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+import QRCode from 'qrcode';
+import { backupSnapshot, packBackup, unpackBackup, validateBackup, applyBackup, snapshotDigest, backupSummary, backupDifferences } from './backup.mjs';
 import { createBoard, sameRoster, nextDraw } from './game.mjs';
 import { periodRange, countTimeline } from './statistics.mjs';
 import { publicStudent, studentKey, studentDisplay } from './student-identity.js';
@@ -52,6 +54,13 @@ export async function createApplication(options = {}) {
     : (await db.all('PRAGMA table_info(students)')).map(c=>c.name);
   for (const column of ['school_class','student_no']) if (!studentColumns.includes(column)) await db.exec(`ALTER TABLE students ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`);
   await db.run("UPDATE students SET student_no=number WHERE student_no=''");
+  async function addColumns(table,definitions){
+    const columns=db.postgres?(await db.all("SELECT column_name AS name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=?",table)).map(c=>c.name):(await db.all(`PRAGMA table_info(${table})`)).map(c=>c.name);
+    for(const [column,type] of definitions)if(!columns.includes(column))await db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  }
+  await addColumns('classes',[['draw_mode',"TEXT NOT NULL DEFAULT 'dice'"],['theme','TEXT']]);
+  await addColumns('draws',[['voided','INTEGER NOT NULL DEFAULT 0'],['void_reason',"TEXT NOT NULL DEFAULT ''"],['voided_at','TEXT']]);
+
   const get = (...args) => db.get(...args);
   const all = (...args) => db.all(...args);
   const run = (...args) => db.run(...args);
@@ -73,6 +82,8 @@ export async function createApplication(options = {}) {
   const setupCode = options.setupCode || secret();
   const rates = new Map();
   const importPreviews = new Map();
+  const backupPreviews = new Map();
+  let dataGeneration=0;
   const secure = options.secureCookies ?? process.env.COOKIE_SECURE === 'true';
   const appOrigin = options.origin || process.env.APP_ORIGIN || process.env.RENDER_EXTERNAL_URL;
   const publicAppOrigin = options.publicOrigin || process.env.PUBLIC_APP_ORIGIN;
@@ -116,13 +127,13 @@ export async function createApplication(options = {}) {
     if(soundTimer){clearTimeout(soundTimer);soundTimer=null;}
     // Fetch outside the DB request queue: a slow source must not block drawing/login.
     soundRefresh=(async()=>{
-      const startedAt=now();
+      const startedAt=now(),generation=dataGeneration;
       try{
         const catalog=await fetchSoundCatalog(options.soundFetcher||fetch);
-        await schedule(async()=>{await transaction(async()=>{await put('soundCatalog',JSON.stringify(catalog));await put('soundAttempt',JSON.stringify({at:startedAt,finishedAt:now(),ok:true,failures:0}));});});
+        await schedule(async()=>{if(generation!==dataGeneration)return;await transaction(async()=>{await put('soundCatalog',JSON.stringify(catalog));await put('soundAttempt',JSON.stringify({at:startedAt,finishedAt:now(),ok:true,failures:0}));});});
       }catch(error){
         const message=error.message.includes('Cloudflare')||error.message.includes('來源')?error.message:'來源連線逾時或暫時中斷；保留上次清單及勾選';
-        await schedule(async()=>{const previous=JSON.parse(await setting('soundAttempt')||'null');await put('soundAttempt',JSON.stringify({at:startedAt,finishedAt:now(),ok:false,error:message,failures:(previous?.ok===false?Number(previous.failures)||1:0)+1}));});
+        await schedule(async()=>{if(generation!==dataGeneration)return;const previous=JSON.parse(await setting('soundAttempt')||'null');await put('soundAttempt',JSON.stringify({at:startedAt,finishedAt:now(),ok:false,error:message,failures:(previous?.ok===false?Number(previous.failures)||1:0)+1}));});
       }
     })().finally(()=>{soundRefresh=null;return armSoundSync();});
   }
@@ -162,12 +173,13 @@ export async function createApplication(options = {}) {
       await classRow(l.class_id);
       const students=await roster(l.class_id);if(!students.length)fail(400,'班別沒有學生');
       if(!['dice','quick'].includes(b.mode))fail(400,'抽籤模式不正確');
-      const board=await boardFor(l,students),move=nextDraw(board,l.must_student,b.mode);
+      const c=await classRow(l.class_id);
+      const board=await boardFor(l,students),move=nextDraw(board,l.must_student,b.mode,c.draw_mode);
       let kind=move.cell.type,student=null,eventText=null;
       if(kind==='student')student=students.find(s=>s.id===move.cell.studentId);
       else {const pool=JSON.parse(await setting('events'))[kind];eventText=pool[randomInt(pool.length)];}
       board.currentIndex=move.targetIndex;const drawId=id();
-      await run('INSERT INTO draws VALUES(?,?,?,?,?,?,?,?,?,?)',drawId,l.id,kind,student?.id||null,student?.display_id||student?.name||null,student?.number||null,eventText,now(),requestId,JSON.stringify({move,board,students}));
+      await run('INSERT INTO draws(id,lesson_id,kind,student_id,student_name,student_number,event_text,created,request_id,animation) VALUES(?,?,?,?,?,?,?,?,?,?)',drawId,l.id,kind,student?.id||null,student?.display_id||student?.name||null,student?.number||null,eventText,now(),requestId,JSON.stringify({move,board,students}));
       await run('UPDATE lessons SET must_student=?,board=? WHERE id=?',Number(kind!=='student'),JSON.stringify(board),l.id);
       return {...await result(await get('SELECT * FROM draws WHERE id=?',drawId)),move,board,students};
     });
@@ -291,14 +303,14 @@ export async function createApplication(options = {}) {
       if (publicPlay) {
         if (!(await setting('password'))) fail(503, '教師尚未完成網站設定');
         let match;
-        if(path==='/api/play/theme'&&method==='GET')return json(res,{theme:themeById(await setting('theme')).id});
+        if(path==='/api/play/theme'&&method==='GET'){const classId=url.searchParams.get('classId'),c=classId?await classRow(classId):null;return json(res,{theme:themeById(c?.theme||await setting('theme')).id,...(c?{drawMode:c.draw_mode}:{})});}
         if (path === '/api/play/classes' && method === 'GET') return json(res, await all('SELECT c.id,c.name,(SELECT count(*) FROM students WHERE class_id=c.id AND active=1) AS student_count FROM classes c WHERE archived=0 ORDER BY name'));
         if (path === '/api/play/sounds' && method === 'GET') return json(res, {items:(await soundState()).items.filter(s=>s.enabled).map(({id,name,url})=>({id,name,url,enabled:true}))});
         if ((match = path.match(/^\/api\/play\/classes\/([^/]+)\/game$/)) && method === 'POST') {
           return json(res, await transaction(async()=>{
             const l=await classRecord(match[1]),students=await roster(l.class_id);
             if(!students.length)fail(400,'請先加入學生');
-            return {id:l.id,class_id:l.class_id,class_name:(await classRow(l.class_id)).name,closed:l.closed,must_student:l.must_student,students,board:await boardFor(l,students)};
+            return {id:l.id,class_id:l.class_id,class_name:(await classRow(l.class_id)).name,draw_mode:(await classRow(l.class_id)).draw_mode,theme:themeById((await classRow(l.class_id)).theme||await setting('theme')).id,closed:l.closed,must_student:l.must_student,students,board:await boardFor(l,students)};
           }));
         }
         if ((match = path.match(/^\/api\/play\/classes\/([^/]+)\/draw$/)) && method === 'POST') {
@@ -313,6 +325,29 @@ export async function createApplication(options = {}) {
       }
       if (path.startsWith('/api/')) {
         (await auth(req));
+        function backupFile(data){const bytes=packBackup(data);res.writeHead(200,{'Content-Type':'application/gzip','Content-Disposition':'attachment; filename="Monopoly-backup-'+new Date().toISOString().slice(0,10)+'.json.gz"','Content-Length':bytes.length,'Cache-Control':'no-store'});res.end(bytes);}
+        if(path==='/api/backup/summary'&&method==='GET'){const summary={};for(const table of ['classes','students','draws','avatars','links'])summary[table]=Number((await get(`SELECT count(*) AS n FROM ${table}`)).n);return json(res,summary);}
+        if(path==='/api/backup/export'&&method==='GET')return backupFile(await transaction(()=>backupSnapshot(db)));
+        if(path==='/api/backup/preview'&&method==='POST'){
+          const b=await body(req,92*1024*1024),data=await validateBackup(unpackBackup(b.file));
+          const current=await backupSnapshot(db),previewId=secret(),expires=Date.now()+10*60e3;
+          backupPreviews.clear();backupPreviews.set(previewId,{data,fingerprint:snapshotDigest(current),expires,safetyDownloaded:false});
+          setTimeout(()=>backupPreviews.delete(previewId),Math.max(0,expires-Date.now())).unref();
+          return json(res,{previewId,expires,current:backupSummary(current),incoming:backupSummary(data),differences:backupDifferences(current,data)});
+        }
+        if(path.startsWith('/api/backup/safety/')&&method==='GET'){
+          const preview=backupPreviews.get(path.slice('/api/backup/safety/'.length));if(!preview||preview.expires<Date.now())fail(409,'還原預覽已過期，請重新上載');
+          const current=await backupSnapshot(db);if(snapshotDigest(current)!==preview.fingerprint)fail(409,'資料已更新，請重新預覽及備份');
+          const bytes=packBackup(current);preview.safetyDownloaded=true;
+          res.writeHead(200,{'Content-Type':'application/gzip','Content-Disposition':'attachment; filename="Monopoly-before-restore.json.gz"','Content-Length':bytes.length,'Cache-Control':'no-store'});return res.end(bytes);
+        }
+        if(path==='/api/backup/restore'&&method==='POST'){
+          const b=await body(req),preview=backupPreviews.get(b.previewId);
+          if(!preview||preview.expires<Date.now())fail(409,'還原預覽已過期，請重新上載');
+          if(!preview.safetyDownloaded||b.backupSaved!==true||b.confirmation!=='取代全部資料')fail(400,'請先下載並保存現況備份，再輸入確認文字');
+          await transaction(async()=>{if(snapshotDigest(await backupSnapshot(db))!==preview.fingerprint)fail(409,'資料已更新，請重新預覽及備份');await applyBackup(db,preview.data);});
+          dataGeneration++;backupPreviews.clear();importPreviews.clear();return json(res,{ok:true,summary:backupSummary(preview.data)});
+        }
         if(path==='/api/theme'){
           if(method==='GET')return json(res,{theme:themeById(await setting('theme')).id});
           if(method==='PUT'){
@@ -363,7 +398,7 @@ export async function createApplication(options = {}) {
             if(rosterFingerprint(state.classes,state.students)!==preview.fingerprint)fail(409,'名單已被修改，請重新預覽，避免覆蓋新資料');
             const plan=preview.plan;
             for(const g of plan.groups) {
-              if(g.action==='create')await run('INSERT INTO classes(id,name) VALUES(?,?)',g.id,g.name);
+              if(g.action==='create')await run("INSERT INTO classes(id,name,draw_mode) VALUES(?,?,'equal')",g.id,g.name);
               else if(g.action==='reactivate')await run('UPDATE classes SET archived=0 WHERE id=?',g.id);
             }
             // Temporary keys allow legitimate number swaps without losing either identity.
@@ -378,12 +413,30 @@ export async function createApplication(options = {}) {
           });
           importPreviews.delete(previewId);return json(res,{ok:true,summary});
         }
-        if (path === '/api/classes' && method === 'GET') return json(res, (await all('SELECT c.*,(SELECT count(*) FROM students WHERE class_id=c.id AND active=1) AS student_count,(SELECT count(*) FROM draws d JOIN lessons l ON l.id=d.lesson_id WHERE l.class_id=c.id) AS draw_count FROM classes c WHERE (archived=0 OR ?=1) ORDER BY name', Number(url.searchParams.get('includeArchived') === '1'))));
+        if (path === '/api/classes' && method === 'GET') return json(res, (await all('SELECT c.*,(SELECT count(*) FROM students WHERE class_id=c.id AND active=1) AS student_count,(SELECT count(*) FROM draws d JOIN lessons l ON l.id=d.lesson_id WHERE l.class_id=c.id AND d.voided=0) AS draw_count FROM classes c WHERE (archived=0 OR ?=1) ORDER BY name', Number(url.searchParams.get('includeArchived') === '1'))));
         if (path === '/api/classes' && method === 'POST') {
           const b = await body(req); const classId = id();
-          try { (await run('INSERT INTO classes(id,name) VALUES(?,?)', classId, text(b.name, 60))); }
+          try { (await run("INSERT INTO classes(id,name,draw_mode) VALUES(?,?,'equal')", classId, text(b.name, 60))); }
           catch (e) { if ((e.code?.includes('SQLITE') || e.code === '23505')) fail(409, '班別名稱已存在'); throw e; }
           return json(res, { id: classId }, 201);
+        }
+        let preferencesMatch;
+        if((preferencesMatch=path.match(/^\/api\/classes\/([^/]+)\/preferences$/))){
+          const c=await classRow(preferencesMatch[1]);
+          if(method==='GET')return json(res,{theme:c.theme,drawMode:c.draw_mode});
+          if(method==='PUT'){
+            const b=await body(req),theme=b.theme===undefined?c.theme:b.theme,drawMode=b.drawMode??c.draw_mode;
+            if(theme!==null&&!THEMES.some(t=>t.id===theme))fail(400,'主題不正確');
+            if(!['equal','dice'].includes(drawMode))fail(400,'抽籤模式不正確');
+            await run('UPDATE classes SET theme=?,draw_mode=? WHERE id=?',theme,drawMode,c.id);return json(res,{theme,drawMode});
+          }
+        }
+        let voidMatch;
+        if((voidMatch=path.match(/^\/api\/draws\/([^/]+)\/void$/))&&method==='PUT'){
+          const b=await body(req);if(typeof b.voided!=='boolean')fail(400,'請選擇是否計入統計');
+          const row=await get('SELECT id FROM draws WHERE id=?',voidMatch[1]);if(!row)fail(404,'找不到紀錄');
+          const reason=b.voided?text(b.reason,200):'';
+          await run('UPDATE draws SET voided=?,void_reason=?,voided_at=? WHERE id=?',Number(b.voided),reason,b.voided?now():null,row.id);return json(res,{ok:true});
         }
         let match;
         if ((match = path.match(/^\/api\/classes\/([^/]+)$/))) {
@@ -398,7 +451,7 @@ export async function createApplication(options = {}) {
           const game=await transaction(async()=>{
             const l=await classRecord(match[1]),students=await roster(l.class_id);
             if(!students.length)fail(400,'請先加入學生');
-            return {...l,class_name:(await classRow(l.class_id)).name,students,board:await boardFor(l,students)};
+            return {...l,class_name:(await classRow(l.class_id)).name,draw_mode:(await classRow(l.class_id)).draw_mode,theme:themeById((await classRow(l.class_id)).theme||await setting('theme')).id,students,board:await boardFor(l,students)};
           });
           return json(res,game);
         }
@@ -413,13 +466,13 @@ export async function createApplication(options = {}) {
           const condition = range.start ? ' AND d.created>=? AND d.created<?' : '';
           const dateArgs = range.start ? [range.start,range.end] : [];
           const students = await all(`SELECT s.id,s.name,s.number,s.school_class,s.student_no,CASE WHEN s.class_id=? AND s.active=1 THEN 1 ELSE 0 END AS active,count(d.id) AS count FROM students s
-            LEFT JOIN draws d ON d.student_id=s.id AND d.kind='student' AND d.lesson_id IN (SELECT id FROM lessons WHERE class_id=?)${condition}
+            LEFT JOIN draws d ON d.student_id=s.id AND d.kind='student' AND d.voided=0 AND d.lesson_id IN (SELECT id FROM lessons WHERE class_id=?)${condition}
             WHERE (s.class_id=? AND s.active=1) OR EXISTS(SELECT 1 FROM draws old JOIN lessons oldlesson ON oldlesson.id=old.lesson_id WHERE old.student_id=s.id AND oldlesson.class_id=?)
             GROUP BY s.id,s.name,s.number,s.school_class,s.student_no,s.class_id,s.active ORDER BY s.school_class,length(s.student_no),s.student_no`, c.id,c.id,...dateArgs,c.id,c.id);
-          const draws = await all(`SELECT d.id,d.lesson_id,d.kind,d.student_id,d.student_name,d.student_number,d.event_text,d.created,l.name AS lesson_name FROM draws d
+          const draws = await all(`SELECT d.id,d.lesson_id,d.kind,d.student_id,d.student_name,d.student_number,d.event_text,d.created,d.voided,d.void_reason,d.voided_at,l.name AS lesson_name FROM draws d
             JOIN lessons l ON l.id=d.lesson_id WHERE l.class_id=?${condition} ORDER BY d.created DESC,d.id DESC`, c.id, ...dateArgs);
-          const studentDraws = draws.filter(d=>d.kind==='student');
-          return json(res, {class:c,range,students:students.map(publicStudent),draws,timeline:countTimeline(draws,range),summary:{studentDraws:studentDraws.length,uniqueStudents:new Set(studentDraws.map(d=>d.student_id)).size,eventDraws:draws.length-studentDraws.length,lessonCount:new Set(draws.map(d=>d.lesson_id)).size}});
+          const counted=draws.filter(d=>!d.voided),studentDraws=counted.filter(d=>d.kind==='student');
+          return json(res, {class:c,range,students:students.map(publicStudent),draws,timeline:countTimeline(counted,range),summary:{studentDraws:studentDraws.length,uniqueStudents:new Set(studentDraws.map(d=>d.student_id)).size,eventDraws:counted.length-studentDraws.length,lessonCount:new Set(draws.map(d=>d.lesson_id)).size}});
         }
         if ((match = path.match(/^\/api\/classes\/([^/]+)\/students$/))) {
           (await classRow(match[1]));
@@ -439,13 +492,15 @@ export async function createApplication(options = {}) {
         }
         if ((match = path.match(/^\/api\/classes\/([^/]+)\/links$/)) && method === 'POST') {
           await classRow(match[1]);
+          const linkRequest=await body(req);
           const rows = await roster(match[1]);
           const links = await transaction(async () => {
             const links = [];
             for (const s of rows) {
               const token = secret(), expires = Date.now() + 7 * 86400e3;
               await run('INSERT INTO links VALUES(?,?,?) ON CONFLICT(student_id) DO UPDATE SET token=excluded.token,expires=excluded.expires', s.id, hash(token), expires);
-              links.push({ name: s.name, display_id:s.display_id, number: s.number, path: '/student.html#token=' + token, expires });
+              const path='/student.html#token='+token,qr=linkRequest.format==='qr'?await QRCode.toString(new URL(path,appOrigin||`${secure?'https':'http'}://${req.headers.host}`).href,{type:'svg',errorCorrectionLevel:'M',margin:3}):undefined;
+              links.push({ name:s.name,display_id:s.display_id,number:s.number,path,expires,...(qr?{qr}:{}) });
             }
             return links;
           });
@@ -496,7 +551,7 @@ export async function createApplication(options = {}) {
           }
         }
         if (path === '/api/lessons' && method === 'GET') {
-          return json(res, (await all('SELECT l.*,c.name AS class_name,(SELECT count(*) FROM draws WHERE lesson_id=l.id AND kind=\'student\') AS draw_count FROM lessons l JOIN classes c ON c.id=l.class_id ORDER BY created DESC')));
+          return json(res, (await all('SELECT l.*,c.name AS class_name,(SELECT count(*) FROM draws WHERE lesson_id=l.id AND voided=0 AND kind=\'student\') AS draw_count FROM lessons l JOIN classes c ON c.id=l.class_id ORDER BY created DESC')));
         }
         if (path === '/api/lessons' && method === 'POST') {
           const b=await body(req);const record=await transaction(()=>classRecord(text(b.classId)));return json(res,{id:record.id},200);
@@ -512,7 +567,7 @@ export async function createApplication(options = {}) {
         if ((match = path.match(/^\/api\/lessons\/([^/]+)\/stats$/)) && method === 'GET') {
           const l = (await lessonRow(match[1]));
           // Include withdrawn students with draws and preserve their recorded name/number.
-          const stats = (await all(`SELECT s.id,s.name,s.number,s.school_class,s.student_no,CASE WHEN s.class_id=? AND s.active=1 THEN 1 ELSE 0 END AS active,count(d.id) AS count FROM students s LEFT JOIN draws d ON d.student_id=s.id AND d.lesson_id=? WHERE (s.class_id=? AND s.active=1) OR d.id IS NOT NULL GROUP BY s.id,s.name,s.number,s.school_class,s.student_no,s.class_id,s.active ORDER BY s.school_class,length(s.student_no),s.student_no`, l.class_id,l.id,l.class_id));
+          const stats = (await all(`SELECT s.id,s.name,s.number,s.school_class,s.student_no,CASE WHEN s.class_id=? AND s.active=1 THEN 1 ELSE 0 END AS active,count(d.id) AS count FROM students s LEFT JOIN draws d ON d.student_id=s.id AND d.voided=0 AND d.lesson_id=? WHERE (s.class_id=? AND s.active=1) OR d.id IS NOT NULL GROUP BY s.id,s.name,s.number,s.school_class,s.student_no,s.class_id,s.active ORDER BY s.school_class,length(s.student_no),s.student_no`, l.class_id,l.id,l.class_id));
           return json(res, { lesson: l, students: stats.map(publicStudent), draws: (await all('SELECT * FROM draws WHERE lesson_id=? ORDER BY created DESC,id DESC', l.id)) });
         }
         if ((match = path.match(/^\/api\/lessons\/([^/]+)\/draw$/)) && method === 'POST') {

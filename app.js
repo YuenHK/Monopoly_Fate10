@@ -7,21 +7,37 @@ let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,so
 let currentTheme=themeById('basic'),themeLoaded=false,mediaUnlocked=false;
 const bgm=$('bgm'),sfx=$('sfx'); bgm.volume=.1;
 const themeVideo=$('theme-video');
+let devicePrefs={music:10,effects:100,lowPower:matchMedia('(prefers-reduced-motion: reduce)').matches};
+try{const saved=JSON.parse(localStorage.getItem('monopoly-playback')||'null');if(saved){for(const key of ['music','effects'])if(Number.isFinite(saved[key]))devicePrefs[key]=Math.max(0,Math.min(100,saved[key]));if(typeof saved.lowPower==='boolean')devicePrefs.lowPower=saved.lowPower;}}catch{}
+const reducedMedia=()=>devicePrefs.lowPower||matchMedia('(prefers-reduced-motion: reduce)').matches;
+function syncMediaPreferences(){
+  bgm.volume=devicePrefs.music/100;sfx.volume=devicePrefs.effects/100;
+  for(const [key,id] of [['music','music-volume'],['effects','effects-volume']]){$(id).value=devicePrefs[key];$(id+'-value').textContent=devicePrefs[key]+'%';}
+  $('low-power').checked=devicePrefs.lowPower;themeVideo.hidden=reducedMedia();
+  if(reducedMedia())themeVideo.pause();else if(themeLoaded)themeVideo.play().catch(()=>{});
+  if(devicePrefs.music===0)bgm.pause();else if(mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
+}
+for(const [key,id] of [['music','music-volume'],['effects','effects-volume']])$(id).addEventListener('input',()=>{devicePrefs[key]=Number($(id).value);syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
+$('low-power').addEventListener('change',()=>{devicePrefs.lowPower=$('low-power').checked;syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
+function project(on){document.body.classList.toggle('projection-mode',on);$('exit-projection').hidden=!on;$('projection-mode').checked=on;if(on)$('display-settings').open=false;}
+$('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape')project(false);});
+syncMediaPreferences();
+
 function applyTheme(id){
   const theme=themeById(id);if(themeLoaded&&theme.id===currentTheme.id)return;
   currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
   bgm.pause();sfx.pause();bgm.src=theme.music;bgm.load();
-  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced=reducedMedia();
   themeVideo.pause();themeVideo.autoplay=!reduced;themeVideo.src=theme.video;themeVideo.load();
   if(!reduced)themeVideo.play().catch(()=>{});
-  if(mediaUnlocked&&!muted)bgm.play().catch(()=>{});
+  if(mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
 }
-async function loadTheme(){const data=await api('/api/theme');applyTheme(data.theme);}
+async function loadTheme(){const classId=lesson?.class_id;const data=await api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''));applyTheme(data.theme);if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}}
 bgm.addEventListener('error',()=>{if(themeLoaded)notice('主題音樂暫時未能播放，請稍後重試',true);});
 themeVideo.addEventListener('error',()=>{if(themeLoaded)notice('主題背景影片暫時未能播放，請稍後重試',true);});
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function startMedia(){mediaUnlocked=true;if(!matchMedia('(prefers-reduced-motion: reduce)').matches)themeVideo.play().catch(()=>{});if(!muted)bgm.play().catch(()=>{});}
-function sound(){startMedia();if(muted)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
+function startMedia(){mediaUnlocked=true;if(!reducedMedia())themeVideo.play().catch(()=>{});if(!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
+function sound(){startMedia();if(muted||devicePrefs.effects===0)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
 async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled);}
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
 window.addEventListener('focus',()=>{loadSoundChoices().catch(()=>{});loadTheme().catch(()=>{});});
@@ -29,7 +45,7 @@ if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-th
 setInterval(()=>{if(document.visibilityState==='visible')loadTheme().catch(()=>{});},30000);
 $('sound-toggle').addEventListener('click',()=>{muted=!muted;$('sound-toggle').textContent=muted?'🔇 音效關閉':'🔊 音效開啟';$('sound-toggle').setAttribute('aria-pressed',String(!muted));if(muted){bgm.pause();sfx.pause();}else sound();});
 async function lobby(){
-  await Promise.all([loadSoundChoices(),loadTheme()]);classes=await api('/api/classes');options($('class-select'),classes,'請選擇班別',c=>`${c.name} · ${c.student_count} 人`);
+  lesson=null;await Promise.all([loadSoundChoices(),loadTheme()]);classes=await api('/api/classes');options($('class-select'),classes,'請選擇班別',c=>`${c.name} · ${c.student_count} 人`);
   if(!$('class-select').value&&classes.length)$('class-select').value=classes[0].id;
   $('lobby-controls').hidden=false;
 }
@@ -39,7 +55,8 @@ function savePending(value){pending=value;try{if(value)sessionStorage.setItem(pe
 function lock(value){busy=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}
 async function openClass(classId){
   if(busy)return;
-  lesson=await api('/api/classes/'+classId+'/game',{});currentIndex=lesson.board.currentIndex;
+  lesson=await api('/api/classes/'+classId+'/game',{});$('roll').textContent=lesson.draw_mode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';applyTheme(lesson.theme);currentIndex=lesson.board.currentIndex;
+  $('draw-hint').textContent=lesson.draw_mode==='equal'?'每位同學等機率；棋盤走格只作動畫。事件後下一抽必定是學生。':'機會與命運之後，下一抽必定抽中學生。';
   $('lobby').hidden=true;$('game').hidden=false;$('change-lesson').hidden=false;
   $('context-text').textContent=lesson.class_name;
   $('stats-link').href=apiOrigin()+'/admin.html?class='+lesson.class_id;
@@ -81,13 +98,14 @@ async function draw(mode){
     lesson.students=result.students||lesson.students;currentIndex=result.move.fromIndex;renderBoard(result.board);
     $('dice1').textContent=result.move.dice?.[0]??'⚡';$('dice2').textContent=result.move.dice?.[1]??'⚡';
     $('status-text').textContent='幸運正在路上⋯';
-    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    for(let i=0;i<result.move.steps;i++){currentIndex=(currentIndex+1)%result.board.cells.length;active();if(!reduced)await sleep(pending.mode==='quick'?Math.min(55,3000/result.move.steps):160);}
+    const reduced=reducedMedia();
+    const stepDelay=result.move.algorithm==='equal'?Math.min(pending.mode==='quick'?55:160,(pending.mode==='quick'?900:1800)/result.move.steps):pending.mode==='quick'?Math.min(55,3000/result.move.steps):160;
+    for(let i=0;i<result.move.steps;i++){currentIndex=(currentIndex+1)%result.board.cells.length;active();if(!reduced)await sleep(stepDelay);}
     savePending(null);showResult(result);loadSoundChoices().catch(()=>{});
     lesson.must_student=result.kind==='student'?0:1;
     $('status-text').textContent=lesson.must_student?'下一抽必定抽中學生！':'再來一次，下一位會是誰？';
     $('last-result').textContent=result.kind==='student'?`剛才抽中：${result.student_number} · ${result.student_name}`:`剛才抽中：${result.kind==='chance'?'機會':'命運'}`;
-    $('draw-hint').textContent=result.move.dice&&result.move.steps!==result.move.dice[0]+result.move.dice[1]?`骰子共 ${result.move.dice[0]+result.move.dice[1]} 點；按「下一抽必中學生」規則，前進至第 ${result.move.steps} 步。`:'機會與命運之後，下一抽必定抽中學生。';
+    $('draw-hint').textContent=result.move.algorithm==='equal'?'等機率模式：先抽取目標，棋盤走格只作動畫。':result.move.dice&&result.move.steps!==result.move.dice[0]+result.move.dice[1]?`骰子共 ${result.move.dice[0]+result.move.dice[1]} 點；按「下一抽必中學生」規則，前進至第 ${result.move.steps} 步。`:'機會與命運之後，下一抽必定抽中學生。';
   }catch(e){
     if([400,404,409].includes(e.status))savePending(null);
     notice(e.message+(pending?'。可按「恢復上次抽籤結果」安全重試。':''),true);
@@ -99,7 +117,7 @@ function showResult(result){
   $('result-kicker').textContent=student?'THE LUCKY ONE':'A LITTLE SURPRISE';$('result-display').replaceChildren();
   if(student){$('result-display').append(avatar(result.avatar_id,result.student_name,'avatar-large'),node('div',result.student_name,'result-name'));$('result-note').textContent='';$('result-note').hidden=true;}
   else{$('result-note').hidden=false;$('result-display').append(node('div',result.event_text,'result-event'));$('result-note').textContent='下一位抽到的同學適用這項事件。下一抽必定抽中人名！';}
-  $('result-modal').showModal();if(student)celebrate($('result-modal'),currentTheme.effect);
+  $('result-modal').showModal();if(student)celebrate($('result-modal'),currentTheme.effect,{lowPower:devicePrefs.lowPower});
 }
 $('roll').addEventListener('click',()=>draw('dice'));$('quick').addEventListener('click',()=>draw('quick'));$('recover').addEventListener('click',()=>draw(pending?.mode||'quick'));
 $('close-result').addEventListener('click',()=>{$('result-modal').close();});

@@ -1,6 +1,6 @@
 {
   "name": "monopoly-fate-classroom",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -13,11 +13,13 @@
   "dependencies": {
     "exceljs": "^4.4.0",
     "pg": "^8.23.1",
+    "qrcode": "1.5.4",
     "sharp": "^0.35.5",
     "yauzl": "^3.4.0"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.10"
+    "@electric-sql/pglite": "^0.5.10",
+    "jsqr": "1.4.0"
   },
   "overrides": {
     "exceljs": {

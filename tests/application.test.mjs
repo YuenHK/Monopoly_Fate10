@@ -51,6 +51,8 @@ for (const backend of ['SQLite','PostgreSQL']) {
       await t.test('multiple classes, same-name students, duplicate numbers and stable identity',async()=>{
         classId=(await call('/api/classes',{name:'4A'})).body.id;
         otherClass=(await call('/api/classes',{name:'4B'})).body.id;
+        assert.equal((await call(`/api/classes/${classId}/preferences`)).body.drawMode,'equal');
+        await call(`/api/classes/${classId}/preferences`,{drawMode:'dice'},'PUT');
         assert.equal((await call('/api/classes',{name:'4A'})).status,409);
         const roster=[{number:'1',name:'楊凱喬'},{number:'2',name:'楊茵晴'},{number:'3',name:'同名同學'},{number:'4',name:'同名同學'}];
         assert.equal((await call(`/api/classes/${classId}/students`,{students:[roster[0],roster[0]]},'PUT')).status,400);
@@ -119,8 +121,8 @@ for (const backend of ['SQLite','PostgreSQL']) {
         const student=(await call(`/api/classes/${otherClass}/students`)).body[0];
         try {
           const times=['2026-10-11T15:59:59.000Z','2026-10-11T16:00:00.000Z','2026-10-18T15:59:59.000Z','2026-10-18T16:00:00.000Z','2026-10-31T15:59:59.000Z','2026-10-31T16:00:00.000Z'];
-          for(let i=0;i<times.length;i++)await app.db.run('INSERT INTO draws VALUES(?,?,?,?,?,?,?,?,?,?)',randomUUID(),i%2?l1:l2,'student',student.id,student.name,student.number,null,times[i],randomUUID(),null);
-          await app.db.run('INSERT INTO draws VALUES(?,?,?,?,?,?,?,?,?,?)',randomUUID(),l1,'chance',null,null,null,'機會事件','2026-10-18T16:00:00.000Z',randomUUID(),null);
+          for(let i=0;i<times.length;i++)await app.db.run('INSERT INTO draws(id,lesson_id,kind,student_id,student_name,student_number,event_text,created,request_id,animation) VALUES(?,?,?,?,?,?,?,?,?,?)',randomUUID(),i%2?l1:l2,'student',student.id,student.name,student.number,null,times[i],randomUUID(),null);
+          await app.db.run('INSERT INTO draws(id,lesson_id,kind,student_id,student_name,student_number,event_text,created,request_id,animation) VALUES(?,?,?,?,?,?,?,?,?,?)',randomUUID(),l1,'chance',null,null,null,'機會事件','2026-10-18T16:00:00.000Z',randomUUID(),null);
           const total=(await call(`/api/classes/${otherClass}/stats`)).body;
           assert.equal(total.summary.studentDraws,6);assert.equal(total.summary.eventDraws,1);assert.equal(total.summary.lessonCount,1);assert.equal(Number(total.students[0].count),6);
           assert.deepEqual(total.timeline,[{label:'2026-10',count:5},{label:'2026-11',count:1}]);
@@ -170,7 +172,7 @@ for (const backend of ['SQLite','PostgreSQL']) {
         await app.db.exec('DROP INDEX one_record_per_class');
         const old='old-record-'+c,oldDraw=randomUUID();
         await app.db.run('INSERT INTO lessons(id,class_id,name,created) VALUES(?,?,?,?)',old,c,'舊課堂','2025-01-01');
-        await app.db.run('INSERT INTO draws VALUES(?,?,?,?,?,?,?,?,?,?)',oldDraw,old,'student',sid,'舊姓名','1',null,'2025-01-01T00:00:00.000Z','same',null);
+        await app.db.run('INSERT INTO draws(id,lesson_id,kind,student_id,student_name,student_number,event_text,created,request_id,animation) VALUES(?,?,?,?,?,?,?,?,?,?)',oldDraw,old,'student',sid,'舊姓名','1',null,'2025-01-01T00:00:00.000Z','same',null);
         await mergeClassRecords(app.db);await mergeClassRecords(app.db);
         assert.equal(Number((await app.db.get('SELECT count(*) AS n FROM lessons WHERE class_id=?',c)).n),1);
         const migrated=(await call(`/api/classes/${c}/stats`)).body;assert.equal(migrated.draws.length,2);assert.ok(migrated.draws.some(d=>d.id===oldDraw&&d.student_name==='舊姓名'));

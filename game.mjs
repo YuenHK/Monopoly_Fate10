@@ -14,7 +14,14 @@ export function sameRoster(board, students) {
   const ids = board?.cells.filter(c => c.type === 'student').map(c => c.studentId).sort();
   return JSON.stringify(ids) === JSON.stringify(students.map(s => s.id).sort());
 }
-export function nextDraw(board, mustStudent, mode) {
+export function nextDraw(board, mustStudent, mode, algorithm = 'dice', choose = randomInt) {
+  if(algorithm==='equal'){
+    const targets=board.cells.map((cell,index)=>({cell,index})).filter(t=>!mustStudent||t.cell.type==='student');
+    if(!targets.length)throw new Error('沒有可抽取的學生');
+    const target=targets[choose(targets.length)];
+    const steps=board.cells.length+(target.index-board.currentIndex+board.cells.length)%board.cells.length;
+    return {dice:null,algorithm,steps,fromIndex:board.currentIndex,targetIndex:target.index,cell:target.cell};
+  }
   const dice = mode === 'dice' ? [randomInt(1, 7), randomInt(1, 7)] : null;
   let steps = dice ? dice[0] + dice[1] : board.cells.length + randomInt(board.cells.length);
   while (mustStudent && board.cells[(board.currentIndex + steps) % board.cells.length].type !== 'student') steps++;

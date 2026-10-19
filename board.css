@@ -10,3 +10,7 @@
 }
 /* Keep names readable when a roster needs a taller perimeter. */
 @media(min-width:1025px){#board-container{height:max(calc(100vh - 180px),calc(var(--board-rows) * 72px));max-height:none}.cell.has-identity .avatar{width:24px;height:24px}.cell.has-identity .fallback{font-size:21px}.cell.has-identity .cell-text{font-size:12px;line-height:1.2}.cell.has-identity .cell-number{font-size:10px}#board-container.long-board #center-area{display:block;overflow:visible;padding:24px}#board-container.long-board .center-controls{position:sticky;top:20px}}
+
+#display-settings{position:relative}#display-settings summary{cursor:pointer;padding:10px 16px}.display-settings-panel{position:absolute;right:0;top:100%;z-index:30;width:min(340px,90vw);padding:18px;display:grid;gap:16px;border:1px solid var(--line);border-radius:10px;background:#fffefa}.display-settings-panel input[type=range]{width:100%}.display-settings-panel input[type=checkbox]{width:auto}.exit-projection{position:fixed;top:8px;right:8px;z-index:25}.projection-mode .topbar,.projection-mode .game-context{display:none}.projection-mode #game .board-scroll{padding-top:58px}.projection-mode #board-container{height:max(calc(100vh - 76px),calc(var(--board-rows) * 72px))}
+/* Anchor the settings panel to the header so it stays inside narrow screens. */
+#display-settings{position:static}.game-page .topbar{position:relative;z-index:20}.display-settings-panel{right:16px}
