@@ -1,6 +1,8 @@
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
+import { THEMES, themeById } from './themes.js';
+import { celebrate } from './celebration.js';
 let rosterPreview = null;
 let classStats = null, statsRevision = 0;
 let classes = [], students = [], avatarRows = [], setupRequired = false;
@@ -11,7 +13,8 @@ function eventTabCount(events){const total=events.chance.length+events.fate.leng
 function setTab(name) {
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   if(name!=='sounds')$('sound-preview').pause();
-  for (const tab of ['classes', 'statistics', 'avatars', 'sounds', 'events']) $('tab-' + tab).hidden = tab !== name;
+  if(name!=='themes'){$('theme-preview-audio').pause();$('theme-preview-video').pause();}
+  for (const tab of ['classes', 'statistics', 'avatars', 'sounds', 'themes', 'events']) $('tab-' + tab).hidden = tab !== name;
 }
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
   setTab(b.dataset.tab);
@@ -36,7 +39,7 @@ form('auth-form', async () => {
 });
 async function enter() {
   await loadClasses();
-  await Promise.all([loadAvatars(), loadEvents(), loadStatsClasses()]);
+  await Promise.all([loadAvatars(), loadEvents(), loadStatsClasses(), loadThemes()]);
   $('auth').hidden = true; $('workspace').hidden = false; $('logout').hidden = false;
   const query=new URLSearchParams(location.search),classId=query.get('class');
   if(classId){$('class-select').value=classId;await loadRoster();$('stats-class').value=classId;await loadClassStats();}
@@ -332,6 +335,40 @@ form('save-sounds',async()=>{
   if(!soundData)return;
   soundData=await api('/api/sounds',{disabled:soundData.items.filter(s=>!s.enabled).map(s=>s.id)},'PUT');soundDirty=false;renderSounds();notice('音效勾選已儲存');
   if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.postMessage('updated');channel.close();}
+});
+
+let selectedTheme='basic';
+function previewTheme(id){
+  selectedTheme=id;const theme=themeById(id);
+  $('theme-preview-title').textContent=theme.icon+' '+theme.name+'預覽';
+  const audio=$('theme-preview-audio'),video=$('theme-preview-video');audio.pause();video.pause();
+  audio.src=theme.music;video.src=theme.video;
+  document.querySelectorAll('.theme-option').forEach(card=>card.classList.toggle('selected',card.dataset.theme===id));
+}
+async function loadThemes(){
+  const saved=await api('/api/theme');
+  $('theme-options').replaceChildren(...THEMES.map(theme=>{
+    const card=node('label',undefined,'theme-option');card.dataset.theme=theme.id;
+    const input=document.createElement('input');input.type='radio';input.name='theme';input.value=theme.id;input.checked=theme.id===saved.theme;
+    input.addEventListener('change',()=>{if(input.checked)previewTheme(theme.id);});
+    const title=node('strong',theme.icon+' '+theme.name),palette=node('span',undefined,'theme-palette');palette.setAttribute('aria-hidden','true');
+    for(const color of theme.colors){const chip=node('span');chip.style.background=color;palette.append(chip);}
+    card.append(input,title,palette,node('span',theme.description));return card;
+  }));
+  previewTheme(saved.theme);$('active-theme').textContent='目前使用：'+themeById(saved.theme).name;
+  tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);
+}
+form('save-theme',async()=>{
+  const saved=await api('/api/theme',{theme:selectedTheme},'PUT');
+  $('active-theme').textContent='目前使用：'+themeById(saved.theme).name;
+  tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);
+  notice('已套用'+themeById(saved.theme).name+'；前台會在下次操作或約 30 秒內更新');
+  if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.postMessage('updated');channel.close();}
+});
+$('preview-theme-effect').addEventListener('click',()=>{
+  const theme=themeById(selectedTheme),dialog=$('theme-effect-dialog');
+  $('theme-effect-caption').textContent=theme.icon+' '+theme.name+'：'+(theme.effect==='confetti'?'經典彩炮':theme.effect==='cats'?'不同貓咪噴發':'不同狗狗噴發');
+  dialog.showModal();celebrate(dialog,theme.effect);
 });
 
 try { await enter(); } catch(e) { if (e.status === 401) await showAuth(); else { notice(e.message,true); await showAuth(); } }

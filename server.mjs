@@ -11,6 +11,7 @@ import { publicStudent, studentKey, studentDisplay } from './student-identity.js
 import { nextSoundSync, DEFAULT_SOUND_INTERVAL, DEFAULT_SOUND_RETRY } from './sound-sync.mjs';
 import { fetchSoundCatalog, validSound } from './sound-library.mjs';
 import { mergeClassRecords } from './class-records.mjs';
+import { THEMES, themeById, THEME_MEDIA } from './themes.js';
 import { readRosterWorkbook, writeRosterWorkbook, planRosterImport, rosterFingerprint } from './roster-workbook.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
@@ -289,6 +290,7 @@ export async function createApplication(options = {}) {
       if (publicPlay) {
         if (!(await setting('password'))) fail(503, '教師尚未完成網站設定');
         let match;
+        if(path==='/api/play/theme'&&method==='GET')return json(res,{theme:themeById(await setting('theme')).id});
         if (path === '/api/play/classes' && method === 'GET') return json(res, await all('SELECT c.id,c.name,(SELECT count(*) FROM students WHERE class_id=c.id AND active=1) AS student_count FROM classes c WHERE archived=0 ORDER BY name'));
         if (path === '/api/play/sounds' && method === 'GET') return json(res, {items:(await soundState()).items.filter(s=>s.enabled).map(({id,name,url})=>({id,name,url,enabled:true}))});
         if ((match = path.match(/^\/api\/play\/classes\/([^/]+)\/game$/)) && method === 'POST') {
@@ -310,6 +312,14 @@ export async function createApplication(options = {}) {
       }
       if (path.startsWith('/api/')) {
         (await auth(req));
+        if(path==='/api/theme'){
+          if(method==='GET')return json(res,{theme:themeById(await setting('theme')).id});
+          if(method==='PUT'){
+            const b=await body(req);
+            if(!THEMES.some(theme=>theme.id===b.theme))fail(400,'請選擇基礎、貓或狗主題');
+            await put('theme',b.theme);return json(res,{theme:b.theme});
+          }
+        }
         if (path === '/api/logout' && method === 'POST') {
           const token = /(?:^|;\s*)monopoly_session=([^;]+)/.exec(req.headers.cookie || '')?.[1];
           if (token) (await run('DELETE FROM logins WHERE token=?', hash(token)));
@@ -530,7 +540,7 @@ export async function createApplication(options = {}) {
       }
       if (!['GET', 'HEAD'].includes(method)) fail(405, '不支援的操作');
       const file = path === '/' ? '/index.html' : path;
-      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg'];
+      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/themes.css',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
       if (!publicFiles.includes(file) && !/^\/sound\/(?:bgm|[1-9]|[12][0-9]|3[0-8])\.mp3$/.test(file) && file !== '/video/bg.mp4') fail(404, '找不到頁面');
       const filePath = resolve(ROOT, '.' + file);
       let stat; try { stat = statSync(filePath); } catch { fail(404, '找不到檔案'); }
