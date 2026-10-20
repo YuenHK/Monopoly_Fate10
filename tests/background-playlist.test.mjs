@@ -36,9 +36,8 @@ test('bad clips are skipped, all-bad library uses bundled fallback, fallback fai
   media.fail();assert.equal(failures,1);assert.equal(media.loads.length,4);
   p.setTheme({id:'dog',video:'dog-fallback',videos:['dog']});assert.equal(media.src,'dog');assert.equal(media.paused,false);
 });
-test('each theme has three licensed bundled MP4 clips with source and modification credits',async()=>{
-  const manifest=JSON.parse(await readFile(new URL('../theme-media/library.json',import.meta.url),'utf8'));
-  assert.equal(manifest.clips.length,9);
-  for(const theme of THEMES){assert.equal(theme.videos.length,3);for(const src of theme.videos){assert.ok(THEME_MEDIA.includes(src.replace('theme-media/','')));const c=manifest.clips.find(c=>'theme-media/'+c.file===src);assert.ok(c?.source.startsWith('https://'));assert.ok(c?.license.startsWith('https://'));const bytes=await readFile(new URL('../'+src,import.meta.url));assert.equal(bytes.toString('ascii',4,8),'ftyp');assert.ok(bytes.length>10000);}}
+test('all built-in, fallback, active and reviewed video bytes match their approved hashes',async()=>{
+ const {validateSchoolVideos}=await import('../scripts/validate-school-videos.mjs');assert.deepEqual(await validateSchoolVideos(),{approved:10,active:9});
+ for(const theme of THEMES){assert.equal(theme.videos.length,3);for(const src of [theme.video,...theme.videos])assert.ok(THEME_MEDIA.includes(src.replace('theme-media/','')));}
 });
 test('a newer weekly revision replaces media even when the selected theme stays the same',()=>{const media=new Media(),p=createBackgroundPlaylist(media);p.setTheme({...theme,libraryRevision:'one'});const count=media.loads.length;p.setTheme({...theme,libraryRevision:'two',videos:['weekly-new']});assert.equal(media.loads.length,count+1);assert.equal(media.src,'weekly-new');});
