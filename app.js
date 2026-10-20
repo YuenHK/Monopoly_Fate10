@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask} from './play-performance.js?v=2.6.10';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.10';
+import {createReadCache,createLoadingTask} from './play-performance.js?v=2.6.11';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.11';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.10';
-import { themeById } from './themes.js?v=2.6.10';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.10';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.10';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.11';
+import { themeById } from './themes.js?v=2.6.11';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.11';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.11';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -44,7 +44,6 @@ async function applyTheme(id,policy){
   currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
   sfx.pause();if(!sameMusic){bgm.pause();if(theme.music)bgm.src=theme.music;else bgm.removeAttribute('src');bgm.load();}
   soundChoices=[];loadSoundChoices().catch(()=>{});
-  for(const link of document.querySelectorAll('[data-theme-video-link]')){link.hidden=!theme.externalVideo;if(theme.externalVideo)link.href=theme.externalVideo.url;else link.removeAttribute('href');}
   backgroundPlaylist.setTheme(theme);
   syncMediaPreferences();
   if(currentTheme.music&&mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
@@ -173,5 +172,3 @@ async function loadPage(){
  if(classId)await openClass(classId);else await lobby();
 }
 connection.run(loadPage);
-
-for(const link of document.querySelectorAll('[data-theme-video-link]'))link.addEventListener('click',()=>{bgm.pause();sfx.pause();});

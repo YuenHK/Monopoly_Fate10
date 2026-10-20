@@ -1,5 +1,5 @@
-import {loadMediaPolicy,filterThemeMedia} from './media-policy.js?v=2.6.9';
-import {SCHOOL_VIDEO_ASSETS} from './themes.js?v=2.6.9';
+import {loadMediaPolicy,filterThemeMedia} from './media-policy.js?v=2.6.11';
+import {SCHOOL_VIDEO_ASSETS} from './themes.js?v=2.6.11';
 // One public manifest is shared by Pages and Render; no teacher data or credentials leave the app.
 export const LIBRARY_BASE = 'https://yuenhk.github.io/Monopoly_Fate10/theme-media/';
 export const LIBRARY_URL = LIBRARY_BASE + 'library.json';
@@ -39,7 +39,7 @@ export const loadBackgroundLibrary=createLibraryLoader();
 export async function withBackgroundLibrary(theme,{policy}={}) {
   if(policy===undefined)policy=await loadMediaPolicy();
   if(!policy)return filterThemeMedia(theme,null);
-  if(theme.id==='basic')return filterThemeMedia({...theme,video:null,videos:[],libraryRevision:'rickroll-external-v1'},policy);
+  if(theme.id==='basic')return filterThemeMedia({...theme,libraryRevision:'rickroll-licensed-v1'},policy);
   const data=await loadBackgroundLibrary();
   if (!data) return filterThemeMedia({...theme,libraryRevision:'bundled-school-v1'},policy);
   const revision=data.updatedAt||'initial-2026-10-20';

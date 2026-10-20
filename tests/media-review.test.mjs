@@ -25,7 +25,7 @@ test('theme media bans are authorized, global, conflict-safe and persistent; pre
   assert.equal((await call('/api/play/sounds?theme=cat',undefined,'GET',false)).body.items.length,1);
   for(const video of media.items.filter(i=>i.kind==='video'&&i.themes.includes('basic')))saved=(await call('/api/theme-media',{key:video.key,blocked:true,revision:saved.revision},'PUT')).body;
   const policy=(await call('/api/play/media-policy',undefined,'GET',false)).body;assert.deepEqual(policy,saved);
-  const theme=filterThemeMedia(themeById('basic'),policy);assert.equal(theme.video,null);assert.deepEqual(theme.videos,[]);assert.equal(theme.externalVideo,null);assert.ok(filterThemeMedia(themeById('cat'),policy).videos.length);
+  const theme=filterThemeMedia(themeById('basic'),policy);assert.equal(theme.video,null);assert.deepEqual(theme.videos,[]);assert.ok(filterThemeMedia(themeById('cat'),policy).videos.length);
   const page=await fetch(origin+'/theme-preview.html?theme=basic&interactive=1');assert.equal(page.status,200);assert.match(await page.text(),/simulation-result/);
   assert.equal(Number((await app.db.get('SELECT count(*) AS n FROM draws')).n),0);
   await app.close();await open();assert.deepEqual((await call('/api/play/media-policy',undefined,'GET',false)).body,policy);

@@ -14,11 +14,12 @@ def approved_entries(media):
   if not re.fullmatch(r'approved/[a-z0-9-]+\.mp4',asset) or asset in seen:raise ValueError('Invalid or duplicate approved asset')
   seen.add(asset)
   if review.get('status')!='approved' or review.get('policy')!=POLICY or not review.get('checkedAt') or not review.get('method'):raise ValueError('Clip has not passed review')
-  if not entry.get('author') or not entry.get('source','').startswith('https://') or not entry.get('license','').startswith('https://'):raise ValueError('Missing attribution')
+  supplied=entry.get('licenseType')=='user-provided' and asset=='approved/rickroll-original.mp4' and entry.get('themes')==['basic']
+  if not entry.get('author') or (not supplied and (not entry.get('source','').startswith('https://') or not entry.get('license','').startswith('https://'))) or (supplied and (not entry.get('source') or not entry.get('license'))):raise ValueError('Missing attribution')
   path=media/asset
   if path.is_symlink() or path.resolve().parent!=(media/'approved').resolve():raise ValueError('Invalid approved asset path')
   content=path.read_bytes()
-  if len(content)>4*1024*1024 or content[4:8]!=b'ftyp' or hashlib.sha256(content).hexdigest()!=entry.get('sha256'):raise ValueError('Reviewed video changed; review again before publication')
+  if len(content)>(25 if supplied else 4)*1024*1024 or content[4:8]!=b'ftyp' or hashlib.sha256(content).hexdigest()!=entry.get('sha256'):raise ValueError('Reviewed video changed; review again before publication')
  for theme in ALLOWED_FILES:
   if len([e for e in entries if theme in e.get('themes',[])])<4:raise ValueError('Each theme needs at least four reviewed clips')
  return entries
@@ -28,7 +29,7 @@ def credits_section(data):
  rows=[]
  for c in data['clips']:
   rows.append('<li><code>'+esc(c['file'])+'</code>：'+esc(c['title'])+'；作者 '+esc(c['author'])+'。<a href="'+esc(c['source'])+'">來源</a> · <a href="'+esc(c['license'])+'">'+esc(c['licenseName'])+'</a>。修改：'+esc(c['modifications'])+'；學校片庫畫面檢查：'+esc(c['review']['checkedAt'])+'。</li>')
- return '<section id="weekly-video-library"><h2>學校適用：已審核影片庫</h2><p>每週一香港時間 06:15 只在已審核片庫輪替，貓狗主題各維持三條。禁止色情、血腥、虐待、驚嚇及怪異內容；迷因主題只提供官方 Rick Roll 原版 MV 連結，不輪播背景影片，貓狗主題維持溫馨可愛。新搜尋結果只列候選，不會自動播放。最近輪替：'+esc(data['updatedAt'])+'</p><ul>'+''.join(rows)+'</ul><p>審查方式：全段每0.25秒抽幀並核對來源，並非教師親自審批或逐幀觀看，仍可能漏檢。<a href="approved-catalog.json">全部已審核素材、授權及檔案指紋</a> · <a href="school-review.json">本次排除及搜尋記錄</a>。新增或改動影片須重新檢查，雜湊不符時停止發布。</p></section>'
+ return '<section id="weekly-video-library"><h2>學校適用：已審核影片庫</h2><p>每週一香港時間 06:15 只在已審核片庫輪替，貓狗主題各維持三條。禁止色情、血腥、虐待、驚嚇及怪異內容；迷因主題固定使用使用者提供授權的 Rick Roll 原版 MV 背景，貓狗主題維持溫馨可愛。新搜尋結果只列候選，不會自動播放。最近輪替：'+esc(data['updatedAt'])+'</p><ul>'+''.join(rows)+'</ul><p>審查方式：全段每0.25秒抽幀並核對來源，並非教師親自審批或逐幀觀看，仍可能漏檢。<a href="approved-catalog.json">全部已審核素材、授權及檔案指紋</a> · <a href="school-review.json">本次排除及搜尋記錄</a>。新增或改動影片須重新檢查，雜湊不符時停止發布。</p></section>'
 
 def refresh(root,now=None,force=False):
  media=Path(root)/'theme-media';entries=approved_entries(media)
