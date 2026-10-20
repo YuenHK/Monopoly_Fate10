@@ -1,10 +1,10 @@
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
-import { THEMES, themeById } from './themes.js?v=2.6.4';
+import { THEMES, themeById } from './themes.js?v=2.6.5';
 import { celebrate } from './celebration.js';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.4';
-import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.4';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.5';
+import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.5';
 const themePreviewPlaylist=createBackgroundPlaylist($('theme-preview-video'));
 let rosterPreview = null;
 let classStats = null, statsRevision = 0;
