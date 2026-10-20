@@ -1,13 +1,14 @@
-import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.9';
+import {createReadCache,createLoadingTask} from './play-performance.js?v=2.6.10';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.10';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
-import { themeById } from './themes.js?v=2.6.9';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.9';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.9';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.10';
+import { themeById } from './themes.js?v=2.6.10';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.10';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.10';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
-let currentTheme=themeById('basic'),themeLoaded=false,mediaUnlocked=false;
+let currentTheme=filterThemeMedia(themeById('basic'),null),themeLoaded=false,mediaUnlocked=false;
 // Page-only preference: never write this selection to browser storage or teacher settings.
 let temporaryTheme='',configuredTheme='basic';
 const bgm=$('bgm'),sfx=$('sfx'); bgm.volume=.1;
@@ -42,7 +43,7 @@ async function applyTheme(id,policy){
   const sameMusic=themeLoaded&&theme.music===currentTheme.music;
   currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
   sfx.pause();if(!sameMusic){bgm.pause();if(theme.music)bgm.src=theme.music;else bgm.removeAttribute('src');bgm.load();}
-  await loadSoundChoices();
+  soundChoices=[];loadSoundChoices().catch(()=>{});
   for(const link of document.querySelectorAll('[data-theme-video-link]')){link.hidden=!theme.externalVideo;if(theme.externalVideo)link.href=theme.externalVideo.url;else link.removeAttribute('href');}
   backgroundPlaylist.setTheme(theme);
   syncMediaPreferences();
@@ -52,31 +53,53 @@ $('temporary-theme').addEventListener('change',()=>{
   temporaryTheme=$('temporary-theme').value;mediaUnlocked=true;
   loadTheme().catch(e=>notice(e.message,true));
 });
-async function loadTheme(){const classId=lesson?.class_id;let data;try{data=await api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''));}catch(e){await applyTheme(configuredTheme,null);throw e;}await applyTheme(data.theme,await loadMediaPolicy({force:true}));if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}}
+const themeReads=createReadCache({ttl:5000});
+async function loadTheme(){
+ const classId=lesson?.class_id,key=classId||'global';
+ let data,policy;
+ try{[data,policy]=await Promise.all([themeReads.load(key,()=>api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''))),loadMediaPolicy({force:true})]);}
+ catch(e){if(classId===lesson?.class_id)await applyTheme(configuredTheme,null);throw e;}
+ if(classId!==lesson?.class_id)return;
+ await applyTheme(data.theme,policy);
+ if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}
+}
 bgm.addEventListener('error',()=>{if(themeLoaded&&currentTheme.music)notice('主題音樂暫時未能播放，請稍後重試',true);});
 document.addEventListener('visibilitychange',()=>backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden'));
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncMediaPreferences);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function startMedia(){mediaUnlocked=true;backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');if(currentTheme.music&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
 function sound(){startMedia();if(muted||devicePrefs.effects===0||!currentTheme.mediaAvailable||!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;sfx.play().catch(()=>notice('音效暫時未能播放，請稍後重試',true));}
-async function loadSoundChoices(){const theme=currentTheme.id;try{const data=await api('/api/sounds?theme='+theme);if(theme===currentTheme.id)soundChoices=data.items.filter(approvedSchoolSound);}catch{soundChoices=[];}}
-if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
-window.addEventListener('focus',()=>{loadSoundChoices().catch(()=>{});loadTheme().catch(()=>{});});
-if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.onmessage=()=>loadTheme().catch(()=>{});}
-setInterval(()=>{if(document.visibilityState==='visible')loadTheme().catch(()=>{});},30000);
-$('sound-toggle').addEventListener('click',async()=>{muted=!muted;$('sound-toggle').textContent=muted?'🔇 音效關閉':'🔊 音效開啟';$('sound-toggle').setAttribute('aria-pressed',String(!muted));if(muted){bgm.pause();sfx.pause();}else{try{await loadTheme();await loadSoundChoices();sound();}catch(e){bgm.pause();sfx.pause();notice(e.message,true);}}});
-async function lobby(){
-  lesson=null;await Promise.all([loadSoundChoices(),loadTheme()]);classes=await api('/api/classes');options($('class-select'),classes,'請選擇班別',c=>`${c.name} · ${c.student_count} 人`);
-  if(!$('class-select').value&&classes.length)$('class-select').value=classes[0].id;
-  $('lobby-controls').hidden=false;
+const soundReads=createReadCache({ttl:60000});
+let soundRequest=0;
+async function loadSoundChoices(){
+ const theme=currentTheme,request=++soundRequest;
+ if(!theme.mediaAvailable){soundChoices=[];return;}
+ try{const data=await soundReads.load(theme.id+':'+theme.libraryRevision,()=>api('/api/sounds?theme='+theme.id));if(request===soundRequest&&theme===currentTheme)soundChoices=data.items.filter(approvedSchoolSound);}
+ catch{if(request===soundRequest)soundChoices=[];}
 }
-form('lobby-controls',async()=>{await loadTheme();await openClass($('class-select').value);startMedia();});
+function refreshMedia(){return loadTheme().then(()=>loadSoundChoices());}
+if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>{soundReads.clear();soundChoices=[];refreshMedia().catch(()=>{});};}
+window.addEventListener('focus',()=>refreshMedia().catch(()=>{}));
+if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.onmessage=()=>{themeReads.clear();refreshMedia().catch(()=>{});};}
+setInterval(()=>{if(document.visibilityState==='visible')refreshMedia().catch(()=>{});},30000);
+$('sound-toggle').addEventListener('click',async()=>{muted=!muted;$('sound-toggle').textContent=muted?'🔇 音效關閉':'🔊 音效開啟';$('sound-toggle').setAttribute('aria-pressed',String(!muted));if(muted){bgm.pause();sfx.pause();}else{try{await loadTheme();loadSoundChoices().catch(()=>{});sound();}catch(e){bgm.pause();sfx.pause();notice(e.message,true);}}});
+const connection=createLoadingTask({render:({state,error})=>{
+ $('connection-state').hidden=state==='ready';$('connection-retry').hidden=state!=='error';
+ $('connection-message').textContent=state==='loading'?'正在載入班別／棋盤⋯':state==='slow'?'仍在連接伺服器，免費服務可能正在喚醒，首次開啟約需一分鐘。':state==='error'?'載入未完成：'+error.message+'。請按「重新連接」再試。':'';
+}});
+$('connection-retry').addEventListener('click',()=>connection.retry());
+async function lobby(){
+  lesson=null;classes=await api('/api/classes');options($('class-select'),classes,'請選擇班別',c=>`${c.name} · ${c.student_count} 人`);
+  if(!$('class-select').value&&classes.length)$('class-select').value=classes[0].id;
+  $('lobby-controls').hidden=false;loadTheme().catch(()=>{});
+}
+form('lobby-controls',()=>{const id=$('class-select').value;return connection.run(async()=>{await openClass(id);startMedia();});});
 function pendingKey(){return 'monopoly-pending:'+lesson.id;}
 function savePending(value){pending=value;try{if(value)sessionStorage.setItem(pendingKey(),JSON.stringify(value));else sessionStorage.removeItem(pendingKey());}catch{}$('recover').hidden=!value;}
 function lock(value){busy=value;$('temporary-theme').disabled=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}
 async function openClass(classId){
   if(busy)return;
-  lesson=await api('/api/classes/'+classId+'/game',{});$('roll').textContent=lesson.draw_mode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';await applyTheme(lesson.theme);currentIndex=lesson.board.currentIndex;
+  lesson=await api('/api/classes/'+classId+'/game',{});$('roll').textContent=lesson.draw_mode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';currentIndex=lesson.board.currentIndex;
   $('draw-hint').textContent=lesson.draw_mode==='equal'?'每位同學等機率；棋盤走格只作動畫。事件後下一抽必定是學生。':'機會與命運之後，下一抽必定抽中學生。';
   $('lobby').hidden=true;$('game').hidden=false;$('change-lesson').hidden=false;
   $('context-text').textContent=lesson.class_name;
@@ -89,7 +112,7 @@ async function openClass(classId){
   try{pending=JSON.parse(sessionStorage.getItem(pendingKey())||'null');}catch{pending=null;}
   $('recover').hidden=!pending;
   if(pending)$('recover').disabled=false;
-  notice('');
+  notice('');applyTheme(lesson.theme).catch(()=>{});
 }
 function gridPos(i,w,h){if(i<w)return[1,i+1];if(i<w+h-1)return[i-w+2,w];if(i<2*w+h-2)return[h,w-(i-(w+h-2))];return[h-(i-(2*w+h-3)),1];}
 function renderBoard(board){
@@ -114,7 +137,7 @@ async function draw(mode){
   lock(true);
   if(!pending)savePending({requestId:crypto.randomUUID(),mode});
   try{
-    await loadTheme();await loadSoundChoices();sound();
+    await loadTheme();loadSoundChoices().catch(()=>{});sound();
     const result=await api(`/api/classes/${lesson.class_id}/draw`,pending);
     lesson.students=result.students||lesson.students;currentIndex=result.move.fromIndex;renderBoard(result.board);
     $('dice1').textContent=result.move.dice?.[0]??'⚡';$('dice2').textContent=result.move.dice?.[1]??'⚡';
@@ -142,9 +165,13 @@ function showResult(result){
 }
 $('roll').addEventListener('click',()=>draw('dice'));$('quick').addEventListener('click',()=>draw('quick'));$('recover').addEventListener('click',()=>draw(pending?.mode||'quick'));
 $('close-result').addEventListener('click',()=>{$('result-modal').close();});
-$('change-lesson').addEventListener('click',async()=>{if(busy)return;$('game').hidden=true;$('lobby').hidden=false;history.replaceState(null,'',appPath);try{await lobby();}catch(e){notice(e.message,true);}});
+$('change-lesson').addEventListener('click',()=>{if(busy)return;$('game').hidden=true;$('lobby').hidden=false;history.replaceState(null,'',appPath);connection.run(lobby);});
 window.addEventListener('resize',()=>{if(renderedBoard)renderBoard(renderedBoard);});
-try{await lobby();const query=new URLSearchParams(location.search);let classId=query.get('class');if(!classId&&query.get('lesson'))classId=(await api('/api/lessons/'+query.get('lesson'))).class_id;if(classId)await openClass(classId);}
-catch(e){notice(e.message,true);}
+async function loadPage(){
+ const query=new URLSearchParams(location.search);let classId=query.get('class');
+ if(!classId&&query.get('lesson'))classId=(await api('/api/lessons/'+query.get('lesson'))).class_id;
+ if(classId)await openClass(classId);else await lobby();
+}
+connection.run(loadPage);
 
 for(const link of document.querySelectorAll('[data-theme-video-link]'))link.addEventListener('click',()=>{bgm.pause();sfx.pause();});
