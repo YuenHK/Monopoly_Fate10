@@ -151,3 +151,7 @@ GitHub Actions 每週一香港時間 06:15 嘗試為每個主題更換最久未�
 三條下載、轉檔、完整解碼及測試均成功才提交發布；任何失敗不發布。Pages 保存公開影片庫，Pages 及 Render 前台／預覽共同讀取 Pages 的公開 library.json，不傳送教師資料或憑證；快取最長15分鐘，重新開頁或選班載入更新。失敗使用內附影片。每週只需發布 Pages，毋須重新部署 Render。程式更新仍須同步 main 及 Render 分支。
 
 Python 測試：`python3 -m unittest discover -s tests -p '*_test.py'`。本機換片須 ffmpeg，再執行 `python3 scripts/refresh-background-library.py`。
+
+### v2.6.3 前台臨時選擇主題
+
+毋須登入，可在前台頂部「主題」選基礎／貓／狗，同時改變本頁配色、音樂、抽籤特效及影片。只在目前頁面有效：不寫入 localStorage、sessionStorage 或教師設定，同頁切換班別仍保留所選主題；重新整理／重開後恢復班別設定。「跟隨班別」可即時恢復教師設定。背景自動同步及抽籤不會覆蓋本頁選擇，亦不影響其他裝置。
