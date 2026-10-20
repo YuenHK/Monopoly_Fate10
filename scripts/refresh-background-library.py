@@ -28,7 +28,7 @@ def credits_section(data):
  rows=[]
  for c in data['clips']:
   rows.append('<li><code>'+esc(c['file'])+'</code>：'+esc(c['title'])+'；作者 '+esc(c['author'])+'。<a href="'+esc(c['source'])+'">來源</a> · <a href="'+esc(c['license'])+'">'+esc(c['licenseName'])+'</a>。修改：'+esc(c['modifications'])+'；學校片庫畫面檢查：'+esc(c['review']['checkedAt'])+'。</li>')
- return '<section id="weekly-video-library"><h2>學校適用：已審核影片庫</h2><p>每週一香港時間 06:15 只在已審核片庫輪替，每個主題維持三條。禁止色情、血腥、虐待、驚嚇及怪異內容；迷因主題採用已審核的日常真人趣片及原創課堂反應 MEME，貓狗主題維持溫馨可愛。新搜尋結果只列候選，不會自動播放。最近輪替：'+esc(data['updatedAt'])+'</p><ul>'+''.join(rows)+'</ul><p>審查方式：全段每0.25秒抽幀並核對來源，並非教師親自審批或逐幀觀看，仍可能漏檢。<a href="approved-catalog.json">全部已審核素材、授權及檔案指紋</a> · <a href="school-review.json">本次排除及搜尋記錄</a>。新增或改動影片須重新檢查，雜湊不符時停止發布。</p></section>'
+ return '<section id="weekly-video-library"><h2>學校適用：已審核影片庫</h2><p>每週一香港時間 06:15 只在已審核片庫輪替，每個主題維持三條。禁止色情、血腥、虐待、驚嚇及怪異內容；迷因主題採用已審核的真人搞笑／反應短片，貓狗主題維持溫馨可愛。新搜尋結果只列候選，不會自動播放。最近輪替：'+esc(data['updatedAt'])+'</p><ul>'+''.join(rows)+'</ul><p>審查方式：全段每0.25秒抽幀並核對來源，並非教師親自審批或逐幀觀看，仍可能漏檢。<a href="approved-catalog.json">全部已審核素材、授權及檔案指紋</a> · <a href="school-review.json">本次排除及搜尋記錄</a>。新增或改動影片須重新檢查，雜湊不符時停止發布。</p></section>'
 
 def refresh(root,now=None,force=False):
  media=Path(root)/'theme-media';entries=approved_entries(media)
