@@ -1,0 +1,236 @@
+{
+  "version": 1,
+  "policy": "school-v1",
+  "description": "只限經畫面檢查及授權核對的學校背景片；網上候選不會自動核准。",
+  "criteria": [
+    "禁止色情、裸露或性暗示",
+    "禁止血腥、暴力、虐待動物及捕食",
+    "禁止驚嚇、恐怖、怪異人物及危險挑戰",
+    "避免粗動作動物翻滾及誇張人物表演",
+    "影片靜音，沒有外站廣告或推薦片"
+  ],
+  "entries": [
+    {
+      "source": "https://commons.wikimedia.org/wiki/File:Kitten_playing_-_Tokyo_-_Jan_7_2020.webm",
+      "title": "Kitten playing - Tokyo - Jan 7 2020.webm",
+      "author": "Nesnad",
+      "license": "https://creativecommons.org/licenses/by/4.0/",
+      "licenseName": "CC BY 4.0",
+      "modifications": "靜音、保留前 24 秒（或較短的完整原片）、轉為 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸。",
+      "id": "cat-play",
+      "themes": [
+        "cat"
+      ],
+      "asset": "approved/cat-play.mp4",
+      "sha256": "b843bac38a9045a0d2e355255698f815e41ccdfd8d2a8711b93b937f960e518e",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "動物正常休息或玩耍；抽幀中未見色情、血腥、虐待、驚嚇或怪異人物。"
+      }
+    },
+    {
+      "title": "小貓依偎在柔軟毯上",
+      "author": "Israyosoy S.",
+      "source": "https://www.pexels.com/video/a-kitten-sleeping-on-top-of-a-blanket-20736704/",
+      "license": "https://www.pexels.com/license/",
+      "licenseName": "Pexels License",
+      "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。",
+      "id": "cat-sleep",
+      "themes": [
+        "cat"
+      ],
+      "asset": "approved/cat-sleep.mp4",
+      "sha256": "a33107d2d1cbec4ebfc86994566feb775c2dbf903b09bad035b11b950722676e",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "動物正常休息或玩耍；抽幀中未見色情、血腥、虐待、驚嚇或怪異人物。"
+      }
+    },
+    {
+      "title": "小貓在室內玩球",
+      "author": "Sandeep Solanki",
+      "source": "https://www.pexels.com/video/playful-kitten-exploring-indoors-35168660/",
+      "license": "https://www.pexels.com/license/",
+      "licenseName": "Pexels License",
+      "modifications": "選用原片第 20–44 秒，靜音、轉成 854×480 H.264 MP4／24 fps；模糊側邊延伸，保留完整主體。",
+      "id": "cat-ball",
+      "themes": [
+        "cat"
+      ],
+      "asset": "approved/cat-ball.mp4",
+      "sha256": "c42f794f5194e3e6592df74d3c531c6979f054a2e7bb75c630e75e1cb3ba0910",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "動物正常休息或玩耍；抽幀中未見色情、血腥、虐待、驚嚇或怪異人物。"
+      }
+    },
+    {
+      "source": "https://commons.wikimedia.org/wiki/File:Goldendoodle_and_Black_Lab_puppies_playing_in_slow_motion.webm",
+      "title": "Goldendoodle and Black Lab puppies playing in slow motion.webm",
+      "author": "Tim Sweet",
+      "license": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "licenseName": "CC BY-SA 3.0",
+      "modifications": "靜音、保留前 24 秒（或較短的完整原片）、轉為 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸。",
+      "id": "dog-play",
+      "themes": [
+        "dog"
+      ],
+      "asset": "approved/dog-play.mp4",
+      "sha256": "cd697e578bcda1ac2f1f62a033dd03c0eb2644d8338b973d9c5ab5b1145c3b4e",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "動物正常休息或玩耍；抽幀中未見色情、血腥、虐待、驚嚇或怪異人物。"
+      }
+    },
+    {
+      "title": "兩隻小狗相依休息",
+      "author": "Gaurav Kumar",
+      "source": "https://www.pexels.com/video/two-sleepy-puppies-14359074/",
+      "license": "https://www.pexels.com/license/",
+      "licenseName": "Pexels License",
+      "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。",
+      "id": "dog-sleep",
+      "themes": [
+        "dog"
+      ],
+      "asset": "approved/dog-sleep.mp4",
+      "sha256": "14b2503c556c5fb6c9d46fcc5822892f16d4c42ad21798bf608076750658c175",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "動物正常休息或玩耍；抽幀中未見色情、血腥、虐待、驚嚇或怪異人物。"
+      }
+    },
+    {
+      "title": "小貓玩藍色貓抓柱",
+      "author": "Luz Calor Som",
+      "source": "https://www.pexels.com/video/cat-playing-with-toy-9833464/",
+      "license": "https://www.pexels.com/license/",
+      "licenseName": "Pexels License",
+      "modifications": "靜音；保留前 24 秒或較短完整片；854×480 H.264 MP4／24 fps；直向片模糊側邊延伸。",
+      "id": "cat-toy",
+      "themes": [
+        "cat",
+        "basic"
+      ],
+      "asset": "approved/cat-toy.mp4",
+      "sha256": "fcca20dd74fdd9464d75cfed6685c610c15a51145d52488f38369b9135a64925",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "單隻小貓在室內玩貓抓柱，沒有驚嚇或危險動作。"
+      }
+    },
+    {
+      "title": "兩隻小狗相依安睡",
+      "author": "Ankit Rainloure",
+      "source": "https://www.pexels.com/video/adorable-newborn-puppies-sleeping-peacefully-34887757/",
+      "license": "https://www.pexels.com/license/",
+      "licenseName": "Pexels License",
+      "modifications": "靜音；保留前 24 秒或較短完整片；854×480 H.264 MP4／24 fps；直向片模糊側邊延伸。",
+      "id": "dog-rest",
+      "themes": [
+        "dog"
+      ],
+      "asset": "approved/dog-rest.mp4",
+      "sha256": "2fc5fe9e270fae39c35b4e2eddd801efb3a4f00c68531f3893ea07942392c053",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "兩隻小狗的頭部近鏡安睡，內容平靜。"
+      }
+    },
+    {
+      "title": "兩隻小狗跳跳玩耍",
+      "author": "Sam Lion",
+      "source": "https://www.pexels.com/video/two-dogs-playing-around-5728455/",
+      "license": "https://www.pexels.com/license/",
+      "licenseName": "Pexels License",
+      "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。",
+      "id": "dog-hop",
+      "themes": [
+        "dog",
+        "basic"
+      ],
+      "asset": "approved/dog-hop.mp4",
+      "sha256": "c8129397b0b8e4f3608d950d7983e6db8c99914064e5b4dc6404860e66e9a817",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "兩隻小狗在室內短暫跳起及走動，沒有互相翻滾。"
+      }
+    },
+    {
+      "source": "https://commons.wikimedia.org/wiki/File:Cat_Playing_with_String_Toy_1_2014-02-04.ogv",
+      "title": "Cat Playing with String Toy 1 2014-02-04.ogv",
+      "author": "FASTILY",
+      "license": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "licenseName": "CC BY-SA 3.0",
+      "modifications": "靜音、保留前 24 秒（或較短的完整原片）、轉為 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸。",
+      "id": "basic-string",
+      "themes": [
+        "basic"
+      ],
+      "asset": "approved/basic-string.mp4",
+      "sha256": "cd89faa81f4bfb082b6b1c29c08fb47147be39d6e1b3c52c7abac03d0a1fe88a",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "橘貓在家中追逐繩玩具，沒有傷害畫面。"
+      }
+    },
+    {
+      "title": "兩隻小貓玩捉迷藏",
+      "author": "Grasya Moon",
+      "source": "https://www.pexels.com/video/two-kittens-playing-near-a-hollow-block-4624594/",
+      "license": "https://www.pexels.com/license/",
+      "licenseName": "Pexels License",
+      "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。",
+      "id": "basic-kittens",
+      "themes": [
+        "basic"
+      ],
+      "asset": "approved/basic-kittens.mp4",
+      "sha256": "1547258b0ff885839f06c3724b3fc57f9ccf9735692398fed7a477c9df59d2ea",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
+        "observations": "兩隻小貓在空心磚旁探頭及走動，沒有粗動作。"
+      }
+    }
+  ]
+}

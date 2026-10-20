@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-20",
+  "method": "12 段舊主片／後備片及4段新增／重新選配片，以每0.25秒抽幀檢查；只核准檢查過的輸出片段及其SHA256，不代表人工逐幀觀看。",
+  "policy": "school-v1",
+  "excluded": [
+    {
+      "file": "meme-ladle.mp4",
+      "reason": "較保守學校版不採用誇張人物唱歌表演；不將素材標示為色情。"
+    },
+    {
+      "file": "meme-mop.mp4",
+      "reason": "較保守學校版不採用誇張人物拖地表演；不將素材標示為色情。"
+    },
+    {
+      "file": "dog-outdoor.mp4",
+      "reason": "移除狗隻較粗動作的互相翻滾，改用安睡片。"
+    }
+  ],
+  "newSearches": [
+    {
+      "source": "https://www.pexels.com/video/cat-playing-with-toy-9833464/",
+      "status": "approved",
+      "asset": "approved/cat-toy.mp4"
+    },
+    {
+      "source": "https://www.pexels.com/video/adorable-newborn-puppies-sleeping-peacefully-34887757/",
+      "status": "approved",
+      "asset": "approved/dog-rest.mp4"
+    }
+  ],
+  "approvedCount": 10,
+  "limitations": "視覺抽幀審核仍有漏檢可能；學校可先預覽是否符合本校要求。每週僅輪替此白名單，不以搜尋標題代表內容審核。"
+}

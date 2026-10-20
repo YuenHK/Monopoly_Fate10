@@ -1,10 +1,10 @@
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
-import { THEMES, themeById } from './themes.js?v=2.6.2';
+import { THEMES, themeById } from './themes.js?v=2.6.4';
 import { celebrate } from './celebration.js';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.2';
-import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.2';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.4';
+import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.4';
 const themePreviewPlaylist=createBackgroundPlaylist($('theme-preview-video'));
 let rosterPreview = null;
 let classStats = null, statsRevision = 0;
@@ -380,7 +380,7 @@ async function loadThemes(){
     card.append(input,title,preview,state,palette,node('span',theme.description));return card;
   }));
   setThemeCardPlayback(!$('tab-themes').hidden);
-  previewTheme(saved.theme);const library=await loadBackgroundLibrary();if(revision!==themeRevision)return;$('background-update-status').textContent='每週一香港時間 06:15 更新，每個主題換 1 條；最近成功更新：'+(library?.updatedAt?date(library.updatedAt):'2026-10-20（初始影片庫）')+'。更新失敗會保留現有影片。';$('active-theme').textContent=($('theme-scope').value?'這班':'全站預設')+'目前使用：'+themeById(saved.theme).name+($('theme-scope').value&&$('inherit-theme').checked?'（沿用全站預設）':'');
+  previewTheme(saved.theme);const library=await loadBackgroundLibrary();if(revision!==themeRevision)return;$('background-update-status').textContent='學校影片庫：只播放已審核片段。每週一香港時間 06:15 自動輪替；最近輪替：'+(library?.updatedAt?date(library.updatedAt):'已載入內附審核片庫')+'。新搜尋結果不會自動加入播放。';$('active-theme').textContent=($('theme-scope').value?'這班':'全站預設')+'目前使用：'+themeById(saved.theme).name+($('theme-scope').value&&$('inherit-theme').checked?'（沿用全站預設）':'');
   tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);
 }
 form('save-theme',async()=>{
