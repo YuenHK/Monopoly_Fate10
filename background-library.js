@@ -1,4 +1,5 @@
-import {SCHOOL_VIDEO_ASSETS} from './themes.js?v=2.6.5';
+import {loadMediaPolicy,filterThemeMedia} from './media-policy.js?v=2.6.6';
+import {SCHOOL_VIDEO_ASSETS} from './themes.js?v=2.6.6';
 // One public manifest is shared by Pages and Render; no teacher data or credentials leave the app.
 export const LIBRARY_BASE = 'https://yuenhk.github.io/Monopoly_Fate10/theme-media/';
 export const LIBRARY_URL = LIBRARY_BASE + 'library.json';
@@ -35,9 +36,11 @@ export function createLibraryLoader({fetcher=(...args)=>fetch(...args),now=()=>D
   };
 }
 export const loadBackgroundLibrary=createLibraryLoader();
-export async function withBackgroundLibrary(theme) {
+export async function withBackgroundLibrary(theme,{policy}={}) {
+  if(policy===undefined)policy=await loadMediaPolicy();
+  if(!policy)return filterThemeMedia(theme,null);
   const data=await loadBackgroundLibrary();
-  if (!data) return {...theme,libraryRevision:'bundled-school-v1'};
+  if (!data) return filterThemeMedia({...theme,libraryRevision:'bundled-school-v1'},policy);
   const revision=data.updatedAt||'initial-2026-10-20';
-  return {...theme,libraryRevision:revision,videos:data.clips.filter(clip=>clip.theme===theme.id).map(clip=>LIBRARY_BASE+clip.asset+'?v='+encodeURIComponent(clip.sha256||revision))};
+  return filterThemeMedia({...theme,libraryRevision:revision,videos:data.clips.filter(clip=>clip.theme===theme.id).map(clip=>LIBRARY_BASE+clip.asset+'?v='+encodeURIComponent(clip.sha256||revision))},policy);
 }

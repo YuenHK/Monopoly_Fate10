@@ -1,0 +1,30 @@
+import {$,api,node,notice} from './shared.js';
+export function createThemeReview({onPolicyChanged=()=>{}}={}){
+ let data=null,theme='basic',revision=0,saving=false;
+ const host=$('theme-media-list');
+ function stop(){for(const media of host.querySelectorAll('audio,video'))media.pause();}
+ host.addEventListener('play',e=>{for(const m of document.querySelectorAll('audio,video'))if(m!==e.target)m.pause();},true);
+ async function change(item,blocked){
+  if(saving)return;saving=true;host.querySelectorAll('input').forEach(i=>i.disabled=true);stop();
+  try{const saved=await api('/api/theme-media',{key:item.key,blocked,revision:data.revision},'PUT');data.revision=saved.revision;for(const i of data.items)i.blocked=saved.blocked.includes(i.key);render();await onPolicyChanged();notice((blocked?'已在全站禁播：':'已重新啟用：')+item.title+'。前台下次操作或約30秒內更新。');}
+  catch(e){notice(e.message,true);await load(theme);}finally{saving=false;host.querySelectorAll('input').forEach(i=>i.disabled=false);}
+ }
+ function render(){
+  stop();host.replaceChildren();const items=data.items.filter(i=>i.themes.includes(theme));
+  $('theme-media-count').textContent=`音效 ${items.filter(i=>i.kind==='sound').length} 段 · 影片 ${items.filter(i=>i.kind==='video').length} 段 · 音樂 ${items.filter(i=>i.kind==='music').length} 段 · 已禁播 ${items.filter(i=>i.blocked).length} 項`;
+  for(const [kind,title] of [['sound','搞笑／主題音效清單'],['video','影片清單（包括輪播及後備）'],['music','背景音樂']]){
+   const section=node('section',undefined,'stack'),heading=node('h3',title),grid=node('div',undefined,'media-review-grid');section.append(heading,grid);
+   for(const item of items.filter(i=>i.kind===kind)){
+    const card=node('article',undefined,'panel stack'),header=node('div',undefined,'actions'),name=node('strong',item.title),badge=node('span',item.blocked?'已禁播':'允許播放',item.blocked?'badge closed':'badge');header.append(name,badge);card.append(header);
+    const media=document.createElement(kind==='video'?'video':'audio');media.controls=true;media.preload='metadata';media.src=item.url;media.setAttribute('aria-label',item.title+'試播');if(kind==='video'){media.muted=true;media.playsInline=true;}card.append(media);
+    if(item.caption||item.description)card.append(node('p',item.caption||item.description,'muted'));
+    if(item.transcript)card.append(node('small','對白：'+item.transcript));
+    const label=node('label'),check=document.createElement('input');check.type='checkbox';check.checked=!item.blocked;check.disabled=saving;check.setAttribute('aria-label','允許全站播放：'+item.title);check.addEventListener('change',()=>change(item,!check.checked));const text=node('span',' 允許全站播放');label.append(check,text);card.append(label);
+    const sources=node('div',undefined,'actions');if(item.source){const link=node('a','素材來源 ↗');link.href=item.source;link.target='_blank';link.rel='noopener';sources.append(link);}if(item.license){const link=node('a','授權 ↗');link.href=item.license;link.target='_blank';link.rel='noopener';sources.append(link);}card.append(sources);grid.append(card);
+   }
+   host.append(section);
+  }
+ }
+ async function load(id){theme=id;const request=++revision;const result=await api('/api/theme-media');if(request!==revision)return;data=result;render();}
+ return {load,stop};
+}
