@@ -56,7 +56,7 @@ matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncMed
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function startMedia(){mediaUnlocked=true;backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');if(!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
 function sound(){startMedia();if(muted||devicePrefs.effects===0)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，請稍後重試',true));}
-async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled);}
+async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled&&/^school-confirmation-[1-4]$/.test(s.id)&&new RegExp('^theme-media/school-sounds/confirmation-'+s.id.slice(-1)+'\\.mp3\\?v=[a-f0-9]{64}$').test(s.url));}
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
 window.addEventListener('focus',()=>{loadSoundChoices().catch(()=>{});loadTheme().catch(()=>{});});
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.onmessage=()=>loadTheme().catch(()=>{});}
