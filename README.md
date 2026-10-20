@@ -141,3 +141,13 @@ npm test
 三款主題各有 3 條已核對來源授權的短片，靜音隨機輪播；每輪播放完 3 條才重新洗牌，避免前後兩輪接連播放同一條。直向片使用模糊側邊填滿橫向畫面，保留主角。既有半透明棋盤、文字保護底色、音樂及抽籤特效維持原設定。失效素材會跳過，整組無法播放時使用原有內附影片作後備；低耗能／減少動態效果及非使用中後台卡片會暫停。
 
 來源、作者、授權及修改說明見 `theme-media/credits.html` 與 `theme-media/library.json`。Pexels 與 Mixkit Stock Video Free License 素材只隨本網站背景使用，不另行指定開源授權，也不是獨立素材下載庫。搞笑組為授權搞笑素材，並非聲稱全網最熱門 Reels。所有影片隨站提供，播放不需連接 YouTube／Instagram 或第三方影片 API。
+
+### v2.6.2 每週自動換片
+
+GitHub Actions 每週一香港時間 06:15 嘗試為每個主題更換最久未更新的一條，維持各三條。由 GitHub 執行，教師電腦不需開機；排程可能延遲。可在 Actions 的 Refresh weekly classroom background videos 手動執行。
+
+使用 Wikimedia Commons 公開 API，限定 CC0、CC BY 3/4、CC BY-SA 3/4 並保存作者、來源、授權、修改及歷史。基礎組每週新片為輕鬆動物玩耍，貓狗組為小貓／小狗玩耍；新片指本網站未用過，不代表當週發布或熱門排行。標題篩選不能代替人工逐片審查。素材不足時保留現有影片。
+
+三條下載、轉檔、完整解碼及測試均成功才提交發布；任何失敗不發布。Pages 保存公開影片庫，Pages 及 Render 前台／預覽共同讀取 Pages 的公開 library.json，不傳送教師資料或憑證；快取最長15分鐘，重新開頁或選班載入更新。失敗使用內附影片。每週只需發布 Pages，毋須重新部署 Render。程式更新仍須同步 main 及 Render 分支。
+
+Python 測試：`python3 -m unittest discover -s tests -p '*_test.py'`。本機換片須 ffmpeg，再執行 `python3 scripts/refresh-background-library.py`。

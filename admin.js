@@ -1,9 +1,10 @@
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
-import { THEMES, themeById } from './themes.js?v=2.6.1';
+import { THEMES, themeById } from './themes.js?v=2.6.2';
 import { celebrate } from './celebration.js';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.1';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.2';
+import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.2';
 const themePreviewPlaylist=createBackgroundPlaylist($('theme-preview-video'));
 let rosterPreview = null;
 let classStats = null, statsRevision = 0;
@@ -353,12 +354,13 @@ form('save-sounds',async()=>{
   if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.postMessage('updated');channel.close();}
 });
 
-let selectedTheme='basic',themeRevision=0;
-function previewTheme(id){
+let selectedTheme='basic',themeRevision=0,previewRevision=0;
+async function previewTheme(id){
+  const revision=++previewRevision;
   selectedTheme=id;setThemeCardPlayback(!$('tab-themes').hidden);const theme=themeById(id);$('open-theme-preview').href='theme-preview.html?theme='+theme.id;
   $('theme-preview-title').textContent=theme.icon+' '+theme.name+'預覽';
   const audio=$('theme-preview-audio'),video=$('theme-preview-video');audio.pause();video.pause();
-  audio.src=theme.music;themePreviewPlaylist.setEnabled(false);themePreviewPlaylist.setTheme(theme);themePreviewPlaylist.setEnabled(true,{play:false});
+  audio.src=theme.music;themePreviewPlaylist.setEnabled(false);const mediaTheme=await withBackgroundLibrary(theme);if(revision!==previewRevision)return;themePreviewPlaylist.setTheme(mediaTheme);themePreviewPlaylist.setEnabled(!$('tab-themes').hidden,{play:false});
   document.querySelectorAll('.theme-option').forEach(card=>{const active=card.dataset.theme===id;card.classList.toggle('selected',active);card.querySelector('input').checked=active;});
 }
 async function loadThemes(){
@@ -378,7 +380,7 @@ async function loadThemes(){
     card.append(input,title,preview,state,palette,node('span',theme.description));return card;
   }));
   setThemeCardPlayback(!$('tab-themes').hidden);
-  previewTheme(saved.theme);$('active-theme').textContent=($('theme-scope').value?'這班':'全站預設')+'目前使用：'+themeById(saved.theme).name+($('theme-scope').value&&$('inherit-theme').checked?'（沿用全站預設）':'');
+  previewTheme(saved.theme);const library=await loadBackgroundLibrary();if(revision!==themeRevision)return;$('background-update-status').textContent='每週一香港時間 06:15 更新，每個主題換 1 條；最近成功更新：'+(library?.updatedAt?date(library.updatedAt):'2026-10-20（初始影片庫）')+'。更新失敗會保留現有影片。';$('active-theme').textContent=($('theme-scope').value?'這班':'全站預設')+'目前使用：'+themeById(saved.theme).name+($('theme-scope').value&&$('inherit-theme').checked?'（沿用全站預設）':'');
   tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);
 }
 form('save-theme',async()=>{

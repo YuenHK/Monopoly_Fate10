@@ -24,7 +24,7 @@ export function createBackgroundPlaylist(video, { random = Math.random, onFailur
   video.addEventListener('error', () => { if (theme && video.error && previous) { failed.add(previous); advance(); } });
   return {
     setTheme(next) {
-      if (theme?.id === next.id) return;
+      if (theme?.id === next.id && theme?.libraryRevision === next.libraryRevision) return;
       video.pause(); theme = next; queue = []; failed = new Set(); exhausted = false; advance();
     },
     setEnabled(value, { play: start = true } = {}) {
