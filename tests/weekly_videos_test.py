@@ -9,6 +9,18 @@ class Weekly(unittest.TestCase):
   shutil.copytree(src/'approved',media/'approved');data=json.loads((media/'library.json').read_text());data.pop('updatedWeek',None);(media/'library.json').write_text(json.dumps(data))
   for names in m.ALLOWED_FILES.values():
    for name in names:(media/name).write_bytes(b'original-output')
+ def test_basic_stays_mixed_and_pet_themes_stay_separate_across_cycle(self):
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d);self.fixture(root)
+   for week in range(4):
+    m.refresh(root,now=datetime.datetime(2026,10,20,tzinfo=datetime.timezone.utc)+datetime.timedelta(weeks=week),force=True)
+    clips=json.loads((root/'theme-media/library.json').read_text())['clips']
+    basic={c['approvedId'] for c in clips if c['theme']=='basic'}
+    self.assertTrue(basic & {'basic-reaction','basic-brain'})
+    self.assertTrue(basic & {'basic-kitchen','basic-cleaning'})
+    self.assertEqual(len(basic),3)
+    for c in clips:
+     if c['theme'] in ('cat','dog'):self.assertTrue(c['approvedId'].startswith(c['theme']+'-'))
  def test_offline_rotation_then_skip_and_next_week(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);self.fixture(root);now=datetime.datetime(2026,10,20,tzinfo=datetime.timezone.utc)
