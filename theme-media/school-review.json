@@ -22,5 +22,70 @@
   ],
   "approvedCount": 12,
   "limitations": "視覺抽幀審核仍有漏檢可能；學校可先預覽是否符合本校要求。每週僅輪替此白名單，不以搜尋標題代表內容審核。",
-  "basicRevision": "按教師2026-10-20確認的真人＋原創動畫混合方向，重新審查日常唱歌趣片；未採用換頭、驚嚇或不雅片。"
+  "basicRevision": "按教師2026-10-20確認的真人＋原創動畫混合方向，重新審查日常唱歌趣片；未採用換頭、驚嚇或不雅片。",
+  "humanMemeRefresh": {
+    "checkedAt": "2026-10-20",
+    "scope": "只更換迷因主題，全部真人；貓狗素材維持原狀",
+    "reviewFrames": 145,
+    "sources": [
+      {
+        "id": "office",
+        "page": "https://mixkit.co/free-stock-video/businessman-dancing-in-an-office-4630/",
+        "author": "/@highwayvideography/",
+        "license": [
+          {
+            "text": "Mixkit Stock Video Free License",
+            "url": "https://mixkit.co/license/#videoFree"
+          }
+        ],
+        "title": "Businessman dancing in an office",
+        "video": "https://assets.mixkit.co/videos/4630/4630-720.mp4"
+      },
+      {
+        "id": "faces",
+        "page": "https://mixkit.co/free-stock-video/couple-posing-with-funny-faces-to-a-phone-recording-50494/",
+        "author": "/@rubenvelasco/",
+        "license": [
+          {
+            "text": "Mixkit Stock Video Free License",
+            "url": "https://mixkit.co/license/#videoFree"
+          }
+        ],
+        "title": "Couple posing with funny faces to a phone recording ",
+        "video": "https://assets.mixkit.co/videos/50494/50494-720.mp4"
+      },
+      {
+        "id": "victory",
+        "page": "https://mixkit.co/free-stock-video/a-young-man-in-front-of-the-computer-screen-celebrates-51612/",
+        "author": "/@mixkit/",
+        "license": [
+          {
+            "text": "Mixkit Stock Video Free License",
+            "url": "https://mixkit.co/license/#videoFree"
+          }
+        ],
+        "title": "A young man in front of the computer screen celebrates a video game victory",
+        "video": "https://assets.mixkit.co/videos/51612/51612-720.mp4"
+      },
+      {
+        "id": "chess",
+        "page": "https://mixkit.co/free-stock-video/bored-kids-playing-chess-4762/",
+        "author": "/@photooles/",
+        "license": [
+          {
+            "text": "Mixkit Stock Video Free License",
+            "url": "https://mixkit.co/license/#videoFree"
+          }
+        ],
+        "title": "Bored kids playing chess",
+        "video": "https://assets.mixkit.co/videos/4762/4762-720.mp4"
+      }
+    ],
+    "removedFromActivePool": [
+      "basic-reaction",
+      "basic-kitchen",
+      "basic-brain",
+      "basic-cleaning"
+    ]
+  }
 }
