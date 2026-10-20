@@ -1,3 +1,5 @@
+import {validateSchoolVideos} from './validate-school-videos.mjs';
+await validateSchoolVideos();
 import {mkdir,writeFile,readFile,copyFile,cp,rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 const value = process.env.RENDER_APP_URL;
