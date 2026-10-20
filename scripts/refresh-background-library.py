@@ -3,7 +3,7 @@
 import argparse,copy,datetime as dt,hashlib,html,json,os,re,tempfile
 from pathlib import Path
 from zoneinfo import ZoneInfo
-ALLOWED_FILES={'basic':['meme-emoji.mp4','meme-ladle.mp4','meme-mop.mp4'],'cat':['cat-play.mp4','cat-sleep.mp4','cat-ball.mp4'],'dog':['dog-play.mp4','dog-sleep.mp4','dog-outdoor.mp4']}
+ALLOWED_FILES={'cat':['cat-play.mp4','cat-sleep.mp4','cat-ball.mp4'],'dog':['dog-play.mp4','dog-sleep.mp4','dog-outdoor.mp4']}
 POLICY='school-v1'
 def approved_entries(media):
  data=json.loads((media/'approved-catalog.json').read_text(encoding='utf-8'))
@@ -28,7 +28,7 @@ def credits_section(data):
  rows=[]
  for c in data['clips']:
   rows.append('<li><code>'+esc(c['file'])+'</code>：'+esc(c['title'])+'；作者 '+esc(c['author'])+'。<a href="'+esc(c['source'])+'">來源</a> · <a href="'+esc(c['license'])+'">'+esc(c['licenseName'])+'</a>。修改：'+esc(c['modifications'])+'；學校片庫畫面檢查：'+esc(c['review']['checkedAt'])+'。</li>')
- return '<section id="weekly-video-library"><h2>學校適用：已審核影片庫</h2><p>每週一香港時間 06:15 只在已審核片庫輪替，每個主題維持三條。禁止色情、血腥、虐待、驚嚇及怪異內容；迷因主題採用已審核的真人搞笑／反應短片，貓狗主題維持溫馨可愛。新搜尋結果只列候選，不會自動播放。最近輪替：'+esc(data['updatedAt'])+'</p><ul>'+''.join(rows)+'</ul><p>審查方式：全段每0.25秒抽幀並核對來源，並非教師親自審批或逐幀觀看，仍可能漏檢。<a href="approved-catalog.json">全部已審核素材、授權及檔案指紋</a> · <a href="school-review.json">本次排除及搜尋記錄</a>。新增或改動影片須重新檢查，雜湊不符時停止發布。</p></section>'
+ return '<section id="weekly-video-library"><h2>學校適用：已審核影片庫</h2><p>每週一香港時間 06:15 只在已審核片庫輪替，貓狗主題各維持三條。禁止色情、血腥、虐待、驚嚇及怪異內容；迷因主題只提供官方 Rick Roll 原版 MV 連結，不輪播背景影片，貓狗主題維持溫馨可愛。新搜尋結果只列候選，不會自動播放。最近輪替：'+esc(data['updatedAt'])+'</p><ul>'+''.join(rows)+'</ul><p>審查方式：全段每0.25秒抽幀並核對來源，並非教師親自審批或逐幀觀看，仍可能漏檢。<a href="approved-catalog.json">全部已審核素材、授權及檔案指紋</a> · <a href="school-review.json">本次排除及搜尋記錄</a>。新增或改動影片須重新檢查，雜湊不符時停止發布。</p></section>'
 
 def refresh(root,now=None,force=False):
  media=Path(root)/'theme-media';entries=approved_entries(media)
@@ -41,7 +41,7 @@ def refresh(root,now=None,force=False):
   for index,name in enumerate(names):
    entry=copy.deepcopy(pool[(offset+index)%len(pool)]);entry.update(id=Path(name).stem,theme=theme,file=name,approvedId=entry['id'],checked=entry['review']['checkedAt']);entry.pop('themes',None)
    clips.append(entry);staged[name]=(media/entry['asset']).read_bytes()
- data={'version':3,'policy':POLICY,'description':'學校背景：只輪替已審核、固定指紋的影片；新搜尋不直接播放。','updatedAt':now.isoformat(timespec='seconds'),'updatedWeek':week,'schedule':'每週一06:15 Asia/Hong_Kong：已審核片庫輪替','approvedCount':len(entries),'clips':clips}
+ data={'version':4,'policy':POLICY,'description':'學校背景：只輪替已審核、固定指紋的影片；新搜尋不直接播放。','updatedAt':now.isoformat(timespec='seconds'),'updatedWeek':week,'schedule':'每週一06:15 Asia/Hong_Kong：已審核片庫輪替','approvedCount':len(entries),'clips':clips}
  text=(media/'credits.html').read_text(encoding='utf-8')
  if '<section id="weekly-video-library">' not in text:raise ValueError('Missing credits marker')
  text=re.sub(r'<section id="weekly-video-library">.*?</section>',lambda _:credits_section(data),text,count=1,flags=re.S)

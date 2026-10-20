@@ -1,5 +1,5 @@
 import {readFileSync} from 'node:fs';
-import {THEMES} from './themes.js';
+import {THEMES,RICKROLL_VIDEO} from './themes.js';
 import {schoolSoundCatalog} from './school-sounds.mjs';
 import {validMemeSound} from './sound-title-policy.js';
 const seed=JSON.parse(readFileSync(new URL('./sound-catalog.json',import.meta.url),'utf8')).items;
@@ -8,7 +8,7 @@ export function mediaCatalog(originals=seed){
  const sounds=schoolSoundCatalog().filter(s=>!s.themes.includes('basic')).map(e=>({...e,key:'sound:'+e.id,kind:'sound',title:e.name,url:'theme-media/'+e.asset+'?v='+e.sha256}));
  const music=THEMES.map(t=>({key:'music:'+t.id,kind:'music',themes:[t.id],title:t.name+'背景音樂',url:t.music,source:'theme-media/credits.html',description:'既有主題音樂；可預覽並在全站禁播。'}));
  const memes=originals.filter(validMemeSound).map(s=>({...s,key:'sound:'+s.id,kind:'sound',title:s.name,themes:['basic'],source:s.sourceUrl||'https://memes.tw/sound/'+s.id,description:'memes.tw 原有音效；僅按名稱篩選，未逐段聽審。'}));
- return [...videos,...sounds,...memes,...music];
+ return [{...RICKROLL_VIDEO,kind:'video',themes:['basic'],source:RICKROLL_VIDEO.url,description:'點擊後在新分頁開啟 Rick Astley 官方 YouTube 原版 MV；不下載、不嵌入及不作棋盤背景。'},...videos,...sounds,...memes,...music];
 }
 export function parseMediaPolicy(raw){
  const value=typeof raw==='string'?JSON.parse(raw):raw;
