@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "policy": "school-sfx-v1",
+  "description": "自動載入固定學校適用音效庫；不載入未審核網上音效。",
+  "items": [
+    {
+      "id": "school-confirmation-1",
+      "name": "輕快確認音 1",
+      "asset": "school-sounds/confirmation-1.mp3",
+      "sha256": "23d4ddb575f8a67f777f50db8f88326b7bb559863e43dc1053c51a71939cf357",
+      "sourceFile": "Audio/confirmation_001.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "author": "Kenney",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "選用原作者無人聲介面確認音類別，核對授權、完整解碼及固定雜湊；調低音量。不是逐段人工聽審或語音辨識。"
+      }
+    },
+    {
+      "id": "school-confirmation-2",
+      "name": "輕快確認音 2",
+      "asset": "school-sounds/confirmation-2.mp3",
+      "sha256": "e86cf59ec91df8989ebea6e9f35dc8b0a5c6789fb2d080cc8c459c1ddd9d07b2",
+      "sourceFile": "Audio/confirmation_002.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "author": "Kenney",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "選用原作者無人聲介面確認音類別，核對授權、完整解碼及固定雜湊；調低音量。不是逐段人工聽審或語音辨識。"
+      }
+    },
+    {
+      "id": "school-confirmation-3",
+      "name": "輕快確認音 3",
+      "asset": "school-sounds/confirmation-3.mp3",
+      "sha256": "d017e409067915b193f76edb59c7607035e6d72f86c018d653c0b0b5a3347a73",
+      "sourceFile": "Audio/confirmation_003.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "author": "Kenney",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "選用原作者無人聲介面確認音類別，核對授權、完整解碼及固定雜湊；調低音量。不是逐段人工聽審或語音辨識。"
+      }
+    },
+    {
+      "id": "school-confirmation-4",
+      "name": "輕快確認音 4",
+      "asset": "school-sounds/confirmation-4.mp3",
+      "sha256": "703de0f1833d178e78af294c8e4b18480c5a95d0bf41c200923fd5f67564cbfb",
+      "sourceFile": "Audio/confirmation_004.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "author": "Kenney",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "選用原作者無人聲介面確認音類別，核對授權、完整解碼及固定雜湊；調低音量。不是逐段人工聽審或語音辨識。"
+      }
+    }
+  ]
+}

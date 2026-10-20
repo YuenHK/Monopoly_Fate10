@@ -6,7 +6,7 @@
     "禁止色情、裸露或性暗示",
     "禁止血腥、暴力、虐待動物及捕食",
     "禁止驚嚇、恐怖、怪異人物及危險挑戰",
-    "避免粗動作動物翻滾及誇張人物表演",
+    "避免粗動作動物翻滾；真人趣片限正常日常穿着及輕鬆情境，禁止羞辱、換頭及危險惡搞",
     "影片靜音，沒有外站廣告或推薦片"
   ],
   "entries": [
@@ -129,8 +129,7 @@
       "modifications": "靜音；保留前 24 秒或較短完整片；854×480 H.264 MP4／24 fps；直向片模糊側邊延伸。",
       "id": "cat-toy",
       "themes": [
-        "cat",
-        "basic"
+        "cat"
       ],
       "asset": "approved/cat-toy.mp4",
       "sha256": "fcca20dd74fdd9464d75cfed6685c610c15a51145d52488f38369b9135a64925",
@@ -174,8 +173,7 @@
       "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。",
       "id": "dog-hop",
       "themes": [
-        "dog",
-        "basic"
+        "dog"
       ],
       "asset": "approved/dog-hop.mp4",
       "sha256": "c8129397b0b8e4f3608d950d7983e6db8c99914064e5b4dc6404860e66e9a817",
@@ -189,47 +187,91 @@
       }
     },
     {
-      "source": "https://commons.wikimedia.org/wiki/File:Cat_Playing_with_String_Toy_1_2014-02-04.ogv",
-      "title": "Cat Playing with String Toy 1 2014-02-04.ogv",
-      "author": "FASTILY",
-      "license": "https://creativecommons.org/licenses/by-sa/3.0/",
-      "licenseName": "CC BY-SA 3.0",
-      "modifications": "靜音、保留前 24 秒（或較短的完整原片）、轉為 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸。",
-      "id": "basic-string",
       "themes": [
         "basic"
       ],
-      "asset": "approved/basic-string.mp4",
-      "sha256": "cd89faa81f4bfb082b6b1c29c08fb47147be39d6e1b3c52c7abac03d0a1fe88a",
+      "author": "Monopoly Fate10 project",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "licenseName": "CC0 1.0 (original geometric animation)",
+      "modifications": "專為課堂製作的9秒靜音幾何反應動畫。",
+      "id": "basic-reaction",
+      "title": "課堂抽籤反應 MEME",
+      "source": "https://github.com/YuenHK/Monopoly_Fate10/blob/main/scripts/build-theme-media.py",
+      "asset": "approved/basic-reaction.mp4",
+      "sha256": "60441b4ab67fa3b1c467e3e00bd27a3275b99edf46889c00a8b5396dda1663b6",
       "review": {
         "status": "approved",
         "policy": "school-v1",
         "checkedAt": "2026-10-20",
         "reviewer": "Codex visual frame review",
-        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
-        "observations": "橘貓在家中追逐繩玩具，沒有傷害畫面。"
+        "method": "完整輸出每0.25秒抽幀檢查；不代表教師親自審批或逐幀觀看。",
+        "observations": "原創幾何表情：緊張、驚訝、準備好；無真人、暴力或不雅內容。"
       }
     },
     {
-      "title": "兩隻小貓玩捉迷藏",
-      "author": "Grasya Moon",
-      "source": "https://www.pexels.com/video/two-kittens-playing-near-a-hollow-block-4624594/",
-      "license": "https://www.pexels.com/license/",
-      "licenseName": "Pexels License",
-      "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。",
-      "id": "basic-kittens",
       "themes": [
         "basic"
       ],
-      "asset": "approved/basic-kittens.mp4",
-      "sha256": "1547258b0ff885839f06c3724b3fc57f9ccf9735692398fed7a477c9df59d2ea",
+      "author": "Mixkit",
+      "license": "https://mixkit.co/license/#videoFree",
+      "licenseName": "Mixkit Stock Video Free License",
+      "modifications": "靜音、完整短片轉為854×480 H.264／24fps，模糊側邊延伸。",
+      "id": "basic-kitchen",
+      "title": "把湯勺當咪高峰",
+      "source": "https://mixkit.co/free-stock-video/young-woman-singing-in-the-kitchen-101072/",
+      "asset": "approved/basic-kitchen.mp4",
+      "sha256": "0beaa4a6e3572a08057b5c00b14132e5c45943939bab98567bb6a727b0ed9606",
       "review": {
         "status": "approved",
         "policy": "school-v1",
         "checkedAt": "2026-10-20",
         "reviewer": "Codex visual frame review",
-        "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
-        "observations": "兩隻小貓在空心磚旁探頭及走動，沒有粗動作。"
+        "method": "完整輸出每0.25秒抽幀檢查；不代表教師親自審批或逐幀觀看。",
+        "observations": "完整12秒：穿着完整日常衫褲，在廚房以湯勺扮咪高峰；沒有不雅、危險或驚嚇內容。"
+      }
+    },
+    {
+      "themes": [
+        "basic"
+      ],
+      "author": "Monopoly Fate10 project",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "licenseName": "CC0 1.0 (original geometric animation)",
+      "modifications": "專為課堂製作的9秒靜音幾何反應動畫。",
+      "id": "basic-brain",
+      "title": "腦袋載入中 MEME",
+      "source": "https://github.com/YuenHK/Monopoly_Fate10/blob/main/scripts/build-classroom-memes.py",
+      "asset": "approved/basic-brain.mp4",
+      "sha256": "e4f270a66bfa34dff0f4499d7cd4288b0b379e2217442d35b2261c0e6a7d0f22",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "完整輸出每0.25秒抽幀檢查；不代表教師親自審批或逐幀觀看。",
+        "observations": "原創幾何表情配課堂文字：老師說簡單、腦袋載入、終於識答；無真人、暴力或不雅內容。"
+      }
+    },
+    {
+      "themes": [
+        "basic"
+      ],
+      "author": "Mixkit",
+      "license": "https://mixkit.co/license/#videoFree",
+      "licenseName": "Mixkit Stock Video Free License",
+      "modifications": "靜音、完整短片轉為854×480 H.264／24fps，模糊側邊延伸。",
+      "id": "basic-cleaning",
+      "title": "做家務也像開演唱會",
+      "source": "https://mixkit.co/free-stock-video/woman-singing-and-having-fun-while-mopping-101066/",
+      "asset": "approved/basic-cleaning.mp4",
+      "sha256": "4666dfdc222f3aff65c006c4d34567a899c3afa979d436aacd180c05e148cf73",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "完整輸出每0.25秒抽幀檢查；不代表教師親自審批或逐幀觀看。",
+        "observations": "完整13秒：穿着完整日常衫褲，拖地時扮唱歌；沒有不雅、危險或驚嚇內容。"
       }
     }
   ]
