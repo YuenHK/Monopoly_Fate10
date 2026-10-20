@@ -2,7 +2,7 @@
   "version": 3,
   "policy": "school-v1",
   "description": "學校背景：只輪替已審核、固定指紋的影片；新搜尋不直接播放。",
-  "updatedAt": "2026-10-20T13:45:54+08:00",
+  "updatedAt": "2026-10-20T13:50:37+08:00",
   "updatedWeek": "2026-W43",
   "schedule": "每週一06:15 Asia/Hong_Kong：已審核片庫輪替",
   "approvedCount": 12,
