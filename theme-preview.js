@@ -1,10 +1,10 @@
 import {celebrate} from './celebration.js';
-import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.7';
+import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.8';
 import {apiOrigin} from './shared.js';
 // Synthetic students only. Read-only media requests; no classroom or draw writes.
-import { themeById } from './themes.js?v=2.6.7';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.7';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.7';
+import { themeById } from './themes.js?v=2.6.8';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.8';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.8';
 const params=new URLSearchParams(location.search),themeId=themeById(params.get('theme')).id,interactive=params.get('interactive')==='1';
 let theme=await withBackgroundLibrary(themeById(themeId));
 document.body.dataset.theme=theme.id;

@@ -187,91 +187,95 @@
       }
     },
     {
+      "id": "basic-human-office",
+      "title": "辦公室歡樂舞步",
       "themes": [
         "basic"
       ],
-      "author": "Monopoly Fate10 project",
-      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "licenseName": "CC0 1.0 (original geometric animation)",
-      "modifications": "專為課堂製作的9秒靜音幾何反應動畫。",
-      "id": "basic-reaction",
-      "title": "課堂抽籤反應 MEME",
-      "source": "https://github.com/YuenHK/Monopoly_Fate10/blob/main/scripts/build-theme-media.py",
-      "asset": "approved/basic-reaction.mp4",
-      "sha256": "60441b4ab67fa3b1c467e3e00bd27a3275b99edf46889c00a8b5396dda1663b6",
-      "review": {
-        "status": "approved",
-        "policy": "school-v1",
-        "checkedAt": "2026-10-20",
-        "reviewer": "Codex visual frame review",
-        "method": "完整輸出每0.25秒抽幀檢查；不代表教師親自審批或逐幀觀看。",
-        "observations": "原創幾何表情：緊張、驚訝、準備好；無真人、暴力或不雅內容。"
-      }
-    },
-    {
-      "themes": [
-        "basic"
-      ],
-      "author": "Mixkit",
+      "author": "highwayvideography",
+      "source": "https://mixkit.co/free-stock-video/businessman-dancing-in-an-office-4630/",
+      "download": "https://assets.mixkit.co/videos/4630/4630-720.mp4",
       "license": "https://mixkit.co/license/#videoFree",
       "licenseName": "Mixkit Stock Video Free License",
-      "modifications": "靜音、完整短片轉為854×480 H.264／24fps，模糊側邊延伸。",
-      "id": "basic-kitchen",
-      "title": "把湯勺當咪高峰",
-      "source": "https://mixkit.co/free-stock-video/young-woman-singing-in-the-kitchen-101072/",
-      "asset": "approved/basic-kitchen.mp4",
-      "sha256": "0beaa4a6e3572a08057b5c00b14132e5c45943939bab98567bb6a727b0ed9606",
+      "modifications": "完整短片靜音，轉成854×480 H.264 MP4／24fps；保持原構圖，必要時留邊。",
+      "asset": "approved/basic-human-office.mp4",
+      "sha256": "f3f9ff994f40fcf9e1f4255b60744bfed63a430cc3c02e9c98649990fb01db31",
       "review": {
         "status": "approved",
         "policy": "school-v1",
         "checkedAt": "2026-10-20",
         "reviewer": "Codex visual frame review",
-        "method": "完整輸出每0.25秒抽幀檢查；不代表教師親自審批或逐幀觀看。",
-        "observations": "完整12秒：穿着完整日常衫褲，在廚房以湯勺扮咪高峰；沒有不雅、危險或驚嚇內容。"
+        "method": "完整輸出每0.25秒抽幀檢查並核對各素材頁的Free License；不代表逐幀觀看或教師親自審批。",
+        "observations": "穿完整西裝的男子在辦公室原地跳舞，沒有危險動作、暴力或不雅手勢。"
       }
     },
     {
+      "id": "basic-human-faces",
+      "title": "自拍搞笑表情",
       "themes": [
         "basic"
       ],
-      "author": "Monopoly Fate10 project",
-      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "licenseName": "CC0 1.0 (original geometric animation)",
-      "modifications": "專為課堂製作的9秒靜音幾何反應動畫。",
-      "id": "basic-brain",
-      "title": "腦袋載入中 MEME",
-      "source": "https://github.com/YuenHK/Monopoly_Fate10/blob/main/scripts/build-classroom-memes.py",
-      "asset": "approved/basic-brain.mp4",
-      "sha256": "e4f270a66bfa34dff0f4499d7cd4288b0b379e2217442d35b2261c0e6a7d0f22",
-      "review": {
-        "status": "approved",
-        "policy": "school-v1",
-        "checkedAt": "2026-10-20",
-        "reviewer": "Codex visual frame review",
-        "method": "完整輸出每0.25秒抽幀檢查；不代表教師親自審批或逐幀觀看。",
-        "observations": "原創幾何表情配課堂文字：老師說簡單、腦袋載入、終於識答；無真人、暴力或不雅內容。"
-      }
-    },
-    {
-      "themes": [
-        "basic"
-      ],
-      "author": "Mixkit",
+      "author": "rubenvelasco",
+      "source": "https://mixkit.co/free-stock-video/couple-posing-with-funny-faces-to-a-phone-recording-50494/",
+      "download": "https://assets.mixkit.co/videos/50494/50494-720.mp4",
       "license": "https://mixkit.co/license/#videoFree",
       "licenseName": "Mixkit Stock Video Free License",
-      "modifications": "靜音、完整短片轉為854×480 H.264／24fps，模糊側邊延伸。",
-      "id": "basic-cleaning",
-      "title": "做家務也像開演唱會",
-      "source": "https://mixkit.co/free-stock-video/woman-singing-and-having-fun-while-mopping-101066/",
-      "asset": "approved/basic-cleaning.mp4",
-      "sha256": "4666dfdc222f3aff65c006c4d34567a899c3afa979d436aacd180c05e148cf73",
+      "modifications": "完整短片靜音，轉成854×480 H.264 MP4／24fps；保持原構圖，必要時留邊。",
+      "asset": "approved/basic-human-faces.mp4",
+      "sha256": "67e7cefc67cbb26d99a704defcfc52e04883917b3e2a4198fa683aaaa61b48df",
       "review": {
         "status": "approved",
         "policy": "school-v1",
         "checkedAt": "2026-10-20",
         "reviewer": "Codex visual frame review",
-        "method": "完整輸出每0.25秒抽幀檢查；不代表教師親自審批或逐幀觀看。",
-        "observations": "完整13秒：穿着完整日常衫褲，拖地時扮唱歌；沒有不雅、危險或驚嚇內容。"
+        "method": "完整輸出每0.25秒抽幀檢查並核對各素材頁的Free License；不代表逐幀觀看或教師親自審批。",
+        "observations": "兩位穿日常衣服的成人對手機做輕鬆表情，手持紅色龍蝦公仔，沒有親密動作或驚嚇。"
+      }
+    },
+    {
+      "id": "basic-human-victory",
+      "title": "遊戲勝利反應",
+      "themes": [
+        "basic"
+      ],
+      "author": "mixkit",
+      "source": "https://mixkit.co/free-stock-video/a-young-man-in-front-of-the-computer-screen-celebrates-51612/",
+      "download": "https://assets.mixkit.co/videos/51612/51612-720.mp4",
+      "license": "https://mixkit.co/license/#videoFree",
+      "licenseName": "Mixkit Stock Video Free License",
+      "modifications": "完整短片靜音，轉成854×480 H.264 MP4／24fps；保持原構圖，必要時留邊。",
+      "asset": "approved/basic-human-victory.mp4",
+      "sha256": "fcaeb223ba2c6f7a746b38b3b6f3b9d851cab8815d7077620793a21a3f289dc3",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "完整輸出每0.25秒抽幀檢查並核對各素材頁的Free License；不代表逐幀觀看或教師親自審批。",
+        "observations": "穿連帽衫的玩家抬手慶祝、戴上及放下耳機；螢幕內容不可見，沒有暴力遊戲畫面。"
+      }
+    },
+    {
+      "id": "basic-human-chess",
+      "title": "等行棋等到放空",
+      "themes": [
+        "basic"
+      ],
+      "author": "photooles",
+      "source": "https://mixkit.co/free-stock-video/bored-kids-playing-chess-4762/",
+      "download": "https://assets.mixkit.co/videos/4762/4762-720.mp4",
+      "license": "https://mixkit.co/license/#videoFree",
+      "licenseName": "Mixkit Stock Video Free License",
+      "modifications": "完整短片靜音，轉成854×480 H.264 MP4／24fps；保持原構圖，必要時留邊。",
+      "asset": "approved/basic-human-chess.mp4",
+      "sha256": "3fbf728fd44c9d78ff113c653465fa2a326e46904864773867ad8d3ed38edbd0",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "Codex visual frame review",
+        "method": "完整輸出每0.25秒抽幀檢查並核對各素材頁的Free License；不代表逐幀觀看或教師親自審批。",
+        "observations": "三位穿日常衣服的小朋友在沙發旁下棋和等待，沒有危險或羞辱行為。"
       }
     }
   ]
