@@ -215,11 +215,11 @@ export async function createApplication(options = {}) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' https://memeprod.sgp1.digitaloceanspaces.com; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' https://memeprod.sgp1.digitaloceanspaces.com https://yuenhk.github.io; connect-src 'self' https://yuenhk.github.io; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
     try {
       const url = new URL(req.url, 'http://localhost');
       const path = decodeURIComponent(url.pathname);
-      if(path==='/theme-preview.html'){res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'none'");}
+      if(path==='/theme-preview.html'){res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https://yuenhk.github.io; connect-src 'self' https://yuenhk.github.io; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'none'");}
       const method = req.method;
       const publicPlay = path.startsWith('/api/play/');
       const allowedPlayOrigin = req.headers.origin && [appOrigin, publicAppOrigin].filter(Boolean).includes(req.headers.origin);
@@ -596,7 +596,7 @@ export async function createApplication(options = {}) {
       }
       if (!['GET', 'HEAD'].includes(method)) fail(405, '不支援的操作');
       const file = path === '/' ? '/index.html' : path;
-      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/background-playlist.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
+      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/background-library.js','/background-playlist.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
       if (!publicFiles.includes(file) && !/^\/sound\/(?:bgm|[1-9]|[12][0-9]|3[0-8])\.mp3$/.test(file) && file !== '/video/bg.mp4') fail(404, '找不到頁面');
       const filePath = resolve(ROOT, '.' + file);
       let stat; try { stat = statSync(filePath); } catch { fail(404, '找不到檔案'); }

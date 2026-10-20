@@ -1,7 +1,8 @@
 import { celebrate } from './celebration.js';
 import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
-import { themeById } from './themes.js?v=2.6.1';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.1';
+import { themeById } from './themes.js?v=2.6.2';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.2';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.2';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -25,15 +26,18 @@ function project(on){document.body.classList.toggle('projection-mode',on);$('exi
 $('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape')project(false);});
 syncMediaPreferences();
 
-function applyTheme(id){
-  const theme=themeById(id);if(themeLoaded&&theme.id===currentTheme.id)return;
+let themeLoadRevision=0;
+async function applyTheme(id){
+  const request=++themeLoadRevision,theme=await withBackgroundLibrary(themeById(id));if(request!==themeLoadRevision)return;
+  if(themeLoaded&&theme.id===currentTheme.id&&theme.libraryRevision===currentTheme.libraryRevision)return;
+  const sameTheme=themeLoaded&&theme.id===currentTheme.id;
   currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
-  bgm.pause();sfx.pause();bgm.src=theme.music;bgm.load();
+  if(!sameTheme){bgm.pause();sfx.pause();bgm.src=theme.music;bgm.load();}
   backgroundPlaylist.setTheme(theme);
   syncMediaPreferences();
   if(mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
 }
-async function loadTheme(){const classId=lesson?.class_id;const data=await api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''));applyTheme(data.theme);if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}}
+async function loadTheme(){const classId=lesson?.class_id;const data=await api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''));await applyTheme(data.theme);if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}}
 bgm.addEventListener('error',()=>{if(themeLoaded)notice('主題音樂暫時未能播放，請稍後重試',true);});
 document.addEventListener('visibilitychange',()=>backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden'));
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncMediaPreferences);
@@ -57,7 +61,7 @@ function savePending(value){pending=value;try{if(value)sessionStorage.setItem(pe
 function lock(value){busy=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}
 async function openClass(classId){
   if(busy)return;
-  lesson=await api('/api/classes/'+classId+'/game',{});$('roll').textContent=lesson.draw_mode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';applyTheme(lesson.theme);currentIndex=lesson.board.currentIndex;
+  lesson=await api('/api/classes/'+classId+'/game',{});$('roll').textContent=lesson.draw_mode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';await applyTheme(lesson.theme);currentIndex=lesson.board.currentIndex;
   $('draw-hint').textContent=lesson.draw_mode==='equal'?'每位同學等機率；棋盤走格只作動畫。事件後下一抽必定是學生。':'機會與命運之後，下一抽必定抽中學生。';
   $('lobby').hidden=true;$('game').hidden=false;$('change-lesson').hidden=false;
   $('context-text').textContent=lesson.class_name;
