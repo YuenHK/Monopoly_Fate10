@@ -4,7 +4,7 @@ import {schoolSoundCatalog} from './school-sounds.mjs';
 import {validMemeSound} from './sound-title-policy.js';
 const seed=JSON.parse(readFileSync(new URL('./sound-catalog.json',import.meta.url),'utf8')).items;
 export function mediaCatalog(originals=seed){
- const videos=JSON.parse(readFileSync(new URL('./theme-media/approved-catalog.json',import.meta.url),'utf8')).entries.map(e=>({...e,key:'video:'+e.asset,kind:'video',url:'theme-media/'+e.asset+'?v='+e.sha256}));
+ const videos=JSON.parse(readFileSync(new URL('./theme-media/approved-catalog.json',import.meta.url),'utf8')).entries.map(e=>({...e,...(e.id==='rickroll-original'?{source:'theme-media/credits.html',license:'theme-media/credits.html'}:{}),key:e.id==='rickroll-original'?'video:rickroll-original':'video:'+e.asset,kind:'video',url:'theme-media/'+e.asset+'?v='+e.sha256}));
  const sounds=schoolSoundCatalog().filter(s=>!s.themes.includes('basic')).map(e=>({...e,key:'sound:'+e.id,kind:'sound',title:e.name,url:'theme-media/'+e.asset+'?v='+e.sha256}));
  const music=THEMES.map(t=>({key:'music:'+t.id,kind:'music',themes:[t.id],title:t.name+'背景音樂',url:t.music,source:'theme-media/credits.html',description:'既有主題音樂；可預覽並在全站禁播。'}));
  const memes=originals.filter(validMemeSound).map(s=>({...s,key:'sound:'+s.id,kind:'sound',title:s.name,themes:['basic'],source:s.sourceUrl||'https://memes.tw/sound/'+s.id,description:'memes.tw 原有音效；僅按名稱篩選，未逐段聽審。'}));
