@@ -7,6 +7,8 @@ const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
 let currentTheme=themeById('basic'),themeLoaded=false,mediaUnlocked=false;
+// Page-only preference: never write this selection to browser storage or teacher settings.
+let temporaryTheme='',configuredTheme='basic';
 const bgm=$('bgm'),sfx=$('sfx'); bgm.volume=.1;
 const themeVideo=$('theme-video');
 const backgroundPlaylist=createBackgroundPlaylist(themeVideo,{onFailure:()=>notice('主題背景影片暫時未能播放，請稍後重試',true)});
@@ -28,7 +30,8 @@ syncMediaPreferences();
 
 let themeLoadRevision=0;
 async function applyTheme(id){
-  const request=++themeLoadRevision,theme=await withBackgroundLibrary(themeById(id));if(request!==themeLoadRevision)return;
+  configuredTheme=id;
+  const request=++themeLoadRevision,theme=await withBackgroundLibrary(themeById(temporaryTheme||configuredTheme));if(request!==themeLoadRevision)return;
   if(themeLoaded&&theme.id===currentTheme.id&&theme.libraryRevision===currentTheme.libraryRevision)return;
   const sameTheme=themeLoaded&&theme.id===currentTheme.id;
   currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
@@ -37,6 +40,10 @@ async function applyTheme(id){
   syncMediaPreferences();
   if(mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
 }
+$('temporary-theme').addEventListener('change',()=>{
+  temporaryTheme=$('temporary-theme').value;mediaUnlocked=true;
+  applyTheme(configuredTheme).catch(e=>notice(e.message,true));
+});
 async function loadTheme(){const classId=lesson?.class_id;const data=await api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''));await applyTheme(data.theme);if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}}
 bgm.addEventListener('error',()=>{if(themeLoaded)notice('主題音樂暫時未能播放，請稍後重試',true);});
 document.addEventListener('visibilitychange',()=>backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden'));
@@ -58,7 +65,7 @@ async function lobby(){
 form('lobby-controls',async()=>{startMedia();await loadTheme();await openClass($('class-select').value);});
 function pendingKey(){return 'monopoly-pending:'+lesson.id;}
 function savePending(value){pending=value;try{if(value)sessionStorage.setItem(pendingKey(),JSON.stringify(value));else sessionStorage.removeItem(pendingKey());}catch{}$('recover').hidden=!value;}
-function lock(value){busy=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}
+function lock(value){busy=value;$('temporary-theme').disabled=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}
 async function openClass(classId){
   if(busy)return;
   lesson=await api('/api/classes/'+classId+'/game',{});$('roll').textContent=lesson.draw_mode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';await applyTheme(lesson.theme);currentIndex=lesson.board.currentIndex;
