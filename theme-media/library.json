@@ -1,18 +1,21 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "本應用的背景影片來源及授權記錄；並非獨立素材下載平台或熱門排行榜。",
   "clips": [
     {
+      "sourceKey": "commons:8db6ac83901e98da88d3424bb22c35fa90fc899e",
+      "source": "https://commons.wikimedia.org/wiki/File:Kitten_playing_-_Tokyo_-_Jan_7_2020.webm",
+      "title": "Kitten playing - Tokyo - Jan 7 2020.webm",
+      "author": "Nesnad",
+      "license": "https://creativecommons.org/licenses/by/4.0/",
+      "licenseName": "CC BY 4.0",
       "id": "cat-play",
       "theme": "cat",
-      "title": "兩隻小貓玩捉迷藏",
-      "author": "Grasya Moon",
       "file": "cat-play.mp4",
-      "source": "https://www.pexels.com/video/two-kittens-playing-near-a-hollow-block-4624594/",
-      "license": "https://www.pexels.com/license/",
-      "licenseName": "Pexels License",
       "checked": "2026-10-20",
-      "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。"
+      "updatedAt": "2026-10-20T12:26:34+08:00",
+      "modifications": "靜音、保留前 24 秒（或較短的完整原片）、轉為 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸。",
+      "sha256": "b843bac38a9045a0d2e355255698f815e41ccdfd8d2a8711b93b937f960e518e"
     },
     {
       "id": "cat-sleep",
@@ -39,16 +42,19 @@
       "modifications": "選用原片第 20–44 秒，靜音、轉成 854×480 H.264 MP4／24 fps；模糊側邊延伸，保留完整主體。"
     },
     {
+      "sourceKey": "commons:b2cc96a6c046b56452eb8e797239c8a748427f3f",
+      "source": "https://commons.wikimedia.org/wiki/File:Goldendoodle_and_Black_Lab_puppies_playing_in_slow_motion.webm",
+      "title": "Goldendoodle and Black Lab puppies playing in slow motion.webm",
+      "author": "Tim Sweet",
+      "license": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "licenseName": "CC BY-SA 3.0",
       "id": "dog-play",
       "theme": "dog",
-      "title": "兩隻小狗跳跳玩耍",
-      "author": "Sam Lion",
       "file": "dog-play.mp4",
-      "source": "https://www.pexels.com/video/two-dogs-playing-around-5728455/",
-      "license": "https://www.pexels.com/license/",
-      "licenseName": "Pexels License",
       "checked": "2026-10-20",
-      "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。"
+      "updatedAt": "2026-10-20T12:26:34+08:00",
+      "modifications": "靜音、保留前 24 秒（或較短的完整原片）、轉為 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸。",
+      "sha256": "cd697e578bcda1ac2f1f62a033dd03c0eb2644d8338b973d9c5ab5b1145c3b4e"
     },
     {
       "id": "dog-sleep",
@@ -75,16 +81,19 @@
       "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。"
     },
     {
+      "sourceKey": "commons:dba8defef95b5f466eb62467fb1f547f081535c8",
+      "source": "https://commons.wikimedia.org/wiki/File:Cat_Playing_with_String_Toy_1_2014-02-04.ogv",
+      "title": "Cat Playing with String Toy 1 2014-02-04.ogv",
+      "author": "FASTILY",
+      "license": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "licenseName": "CC BY-SA 3.0",
       "id": "meme-emoji",
       "theme": "basic",
-      "title": "笑臉 Emoji 上班族",
-      "author": "Mixkit",
       "file": "meme-emoji.mp4",
-      "source": "https://mixkit.co/free-stock-video/corporate-employee-with-laughing-emoji-face-100848/",
-      "license": "https://mixkit.co/license/#videoFree",
-      "licenseName": "Mixkit Stock Video Free License",
       "checked": "2026-10-20",
-      "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。"
+      "updatedAt": "2026-10-20T12:26:34+08:00",
+      "modifications": "靜音、保留前 24 秒（或較短的完整原片）、轉為 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸。",
+      "sha256": "cd89faa81f4bfb082b6b1c29c08fb47147be39d6e1b3c52c7abac03d0a1fe88a"
     },
     {
       "id": "meme-ladle",
@@ -110,5 +119,24 @@
       "checked": "2026-10-20",
       "modifications": "靜音、保留最多 24 秒、轉成 854×480 H.264 MP4／24 fps；直向片以模糊側邊延伸，保留完整主體。"
     }
-  ]
+  ],
+  "updatedAt": "2026-10-20T12:26:34+08:00",
+  "updatedWeek": "2026-W43",
+  "history": [
+    "commons:8db6ac83901e98da88d3424bb22c35fa90fc899e",
+    "commons:b2cc96a6c046b56452eb8e797239c8a748427f3f",
+    "commons:dba8defef95b5f466eb62467fb1f547f081535c8",
+    "https://commons.wikimedia.org/wiki/File:Cat_playing_with_a_laser_pointer.webm",
+    "https://commons.wikimedia.org/wiki/File:Puppy_playing.webm",
+    "https://mixkit.co/free-stock-video/corporate-employee-with-laughing-emoji-face-100848/",
+    "https://mixkit.co/free-stock-video/woman-singing-and-having-fun-while-mopping-101066/",
+    "https://mixkit.co/free-stock-video/young-woman-singing-in-the-kitchen-101072/",
+    "https://www.pexels.com/video/a-kitten-sleeping-on-top-of-a-blanket-20736704/",
+    "https://www.pexels.com/video/playful-kitten-exploring-indoors-35168660/",
+    "https://www.pexels.com/video/playful-puppies-enjoying-outdoor-fun-28638777/",
+    "https://www.pexels.com/video/two-dogs-playing-around-5728455/",
+    "https://www.pexels.com/video/two-kittens-playing-near-a-hollow-block-4624594/",
+    "https://www.pexels.com/video/two-sleepy-puppies-14359074/"
+  ],
+  "schedule": "每週一 06:15 Asia/Hong_Kong"
 }
