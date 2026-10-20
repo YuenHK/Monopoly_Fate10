@@ -1,6 +1,7 @@
+import {validMemeSound} from './sound-title-policy.js?v=2.6.7';
 import {apiOrigin} from './shared.js';
-import {THEME_MEDIA} from './themes.js?v=2.6.6';
-export function validMediaPolicy(data){return data&&Number.isSafeInteger(data.revision)&&data.revision>=0&&Array.isArray(data.blocked)&&data.blocked.length<=200&&data.blocked.every(k=>typeof k==='string'&&/^(video|sound|music):[a-zA-Z0-9/_.-]+$/.test(k));}
+import {THEME_MEDIA} from './themes.js?v=2.6.7';
+export function validMediaPolicy(data){return data&&Number.isSafeInteger(data.revision)&&data.revision>=0&&Array.isArray(data.blocked)&&data.blocked.length<=10000&&data.blocked.every(k=>typeof k==='string'&&/^(video|sound|music):[a-zA-Z0-9/_.-]+$/.test(k));}
 export function createMediaPolicyLoader({fetcher=(...args)=>fetch(...args),origin=apiOrigin,now=()=>Date.now()}={}){
  let cached=null,expires=0,pending=null;
  return async function load({force=false}={}){
@@ -12,6 +13,7 @@ export function createMediaPolicyLoader({fetcher=(...args)=>fetch(...args),origi
 }
 export const loadMediaPolicy=createMediaPolicyLoader();
 export function approvedSchoolSound(s){
+ if(s?.enabled&&validMemeSound(s))return true;
  if(!s?.enabled||!/^school-(meme|cat|dog|confirmation)-[a-z0-9-]+$/.test(s.id)||typeof s.url!=='string'||!s.url.startsWith('theme-media/'))return false;
  const [path,hash,...extra]=s.url.split('?v=');return !extra.length&&/^[a-f0-9]{64}$/.test(hash||'')&&path.endsWith('.mp3')&&THEME_MEDIA.includes(path.slice('theme-media/'.length));
 }
