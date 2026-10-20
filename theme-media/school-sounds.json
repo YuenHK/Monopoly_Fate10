@@ -1,70 +1,202 @@
 {
   "version": 1,
   "policy": "school-sfx-v1",
-  "description": "自動載入固定學校適用音效庫；不載入未審核網上音效。",
+  "description": "搞笑反應及主題音效；只選有來源及授權的短句或無對白素材。全站禁播設定優先。",
   "items": [
     {
-      "id": "school-confirmation-1",
-      "name": "輕快確認音 1",
-      "asset": "school-sounds/confirmation-1.mp3",
-      "sha256": "23d4ddb575f8a67f777f50db8f88326b7bb559863e43dc1053c51a71939cf357",
-      "sourceFile": "Audio/confirmation_001.ogg",
-      "source": "https://kenney.nl/assets/interface-sounds",
-      "author": "Kenney",
-      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "id": "school-meme-womp-womp",
+      "name": "Womp Womp · 失落長號",
+      "themes": [
+        "basic"
+      ],
+      "asset": "school-sounds/meme-womp-womp.mp3",
+      "sha256": "a09ee4a36b20c0d6faa0d19b9812b9d3e499cd8de72aa3bcfa5b2d173e90ab21",
+      "source": "https://soundbible.com/1830-Sad-Trombone.html",
+      "author": "Joe Lamb",
+      "license": "https://creativecommons.org/licenses/by/3.0/",
+      "transcript": "",
+      "caption": "經典失落反應 MEME，只有長號樂器，沒有對白。",
       "review": {
         "status": "approved",
         "policy": "school-sfx-v1",
         "checkedAt": "2026-10-20",
-        "method": "選用原作者無人聲介面確認音類別，核對授權、完整解碼及固定雜湊；調低音量。不是逐段人工聽審或語音辨識。"
+        "method": "核對原作者類別、明確短句／無對白內容與授權；完整解碼，調低音量並固定雜湊。非逐段人工聽審；教師可逐項預覽及全站禁播。"
       }
     },
     {
-      "id": "school-confirmation-2",
-      "name": "輕快確認音 2",
-      "asset": "school-sounds/confirmation-2.mp3",
-      "sha256": "e86cf59ec91df8989ebea6e9f35dc8b0a5c6789fb2d080cc8c459c1ddd9d07b2",
-      "sourceFile": "Audio/confirmation_002.ogg",
-      "source": "https://kenney.nl/assets/interface-sounds",
-      "author": "Kenney",
+      "id": "school-meme-boing",
+      "name": "Boing · 卡通彈簧",
+      "themes": [
+        "basic"
+      ],
+      "asset": "school-sounds/meme-boing.mp3",
+      "sha256": "57bde52266e07fe3b34e8e2c95276b2292e84c271c2b685e91aec4a351d5ee65",
+      "source": "https://freesound.org/people/reelworldstudio/sounds/161122/",
+      "author": "reelworldstudio",
       "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "transcript": "",
+      "caption": "卡通式彈簧反應，由口簧琴演奏，沒有對白。",
       "review": {
         "status": "approved",
         "policy": "school-sfx-v1",
         "checkedAt": "2026-10-20",
-        "method": "選用原作者無人聲介面確認音類別，核對授權、完整解碼及固定雜湊；調低音量。不是逐段人工聽審或語音辨識。"
+        "method": "核對原作者類別、明確短句／無對白內容與授權；完整解碼，調低音量並固定雜湊。非逐段人工聽審；教師可逐項預覽及全站禁播。"
       }
     },
     {
-      "id": "school-confirmation-3",
-      "name": "輕快確認音 3",
-      "asset": "school-sounds/confirmation-3.mp3",
-      "sha256": "d017e409067915b193f76edb59c7607035e6d72f86c018d653c0b0b5a3347a73",
-      "sourceFile": "Audio/confirmation_003.ogg",
-      "source": "https://kenney.nl/assets/interface-sounds",
+      "id": "school-meme-game-over",
+      "name": "Game over · 遊戲式反應",
+      "themes": [
+        "basic"
+      ],
+      "asset": "school-sounds/meme-game-over.mp3",
+      "sha256": "a17872f54c9e0c115374fa904d745160379acdf48de3966624196a4d2d199cd3",
+      "source": "https://kenney.nl/assets/voiceover-pack",
       "author": "Kenney",
       "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "transcript": "Game over",
+      "caption": "完整遊戲短句配音，不含粗口；不是剪取電視、電影或網紅原聲。",
       "review": {
         "status": "approved",
         "policy": "school-sfx-v1",
         "checkedAt": "2026-10-20",
-        "method": "選用原作者無人聲介面確認音類別，核對授權、完整解碼及固定雜湊；調低音量。不是逐段人工聽審或語音辨識。"
+        "method": "核對原作者類別、明確短句／無對白內容與授權；完整解碼，調低音量並固定雜湊。非逐段人工聽審；教師可逐項預覽及全站禁播。"
       }
     },
     {
-      "id": "school-confirmation-4",
-      "name": "輕快確認音 4",
-      "asset": "school-sounds/confirmation-4.mp3",
-      "sha256": "703de0f1833d178e78af294c8e4b18480c5a95d0bf41c200923fd5f67564cbfb",
-      "sourceFile": "Audio/confirmation_004.ogg",
-      "source": "https://kenney.nl/assets/interface-sounds",
+      "id": "school-meme-level-up",
+      "name": "Level up · 升級反應",
+      "themes": [
+        "basic"
+      ],
+      "asset": "school-sounds/meme-level-up.mp3",
+      "sha256": "5763a96bd3a647818154352a45f97553c3b935572f361c5da3c42c3a94920778",
+      "source": "https://kenney.nl/assets/voiceover-pack",
       "author": "Kenney",
       "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "transcript": "Level up",
+      "caption": "完整遊戲短句配音，不含粗口；不是剪取電視、電影或網紅原聲。",
       "review": {
         "status": "approved",
         "policy": "school-sfx-v1",
         "checkedAt": "2026-10-20",
-        "method": "選用原作者無人聲介面確認音類別，核對授權、完整解碼及固定雜湊；調低音量。不是逐段人工聽審或語音辨識。"
+        "method": "核對原作者類別、明確短句／無對白內容與授權；完整解碼，調低音量並固定雜湊。非逐段人工聽審；教師可逐項預覽及全站禁播。"
+      }
+    },
+    {
+      "id": "school-meme-you-win",
+      "name": "You win · 勝利反應",
+      "themes": [
+        "basic"
+      ],
+      "asset": "school-sounds/meme-you-win.mp3",
+      "sha256": "c5f451997dd25e8d02729e5c298f1860fc33f6749f9e3f11f2596dd1e66d048a",
+      "source": "https://kenney.nl/assets/voiceover-pack",
+      "author": "Kenney",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "transcript": "You win",
+      "caption": "完整遊戲短句配音，不含粗口；不是剪取電視、電影或網紅原聲。",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "核對原作者類別、明確短句／無對白內容與授權；完整解碼，調低音量並固定雜湊。非逐段人工聽審；教師可逐項預覽及全站禁播。"
+      }
+    },
+    {
+      "id": "school-meme-congratulations",
+      "name": "Congratulations · 恭喜反應",
+      "themes": [
+        "basic"
+      ],
+      "asset": "school-sounds/meme-congratulations.mp3",
+      "sha256": "d298ea0e7ffcd59f3186c27d1121f117cd57f4c7a1c12c7848528e0d6d360437",
+      "source": "https://kenney.nl/assets/voiceover-pack",
+      "author": "Kenney",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "transcript": "Congratulations",
+      "caption": "完整遊戲短句配音，不含粗口；不是剪取電視、電影或網紅原聲。",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "核對原作者類別、明確短句／無對白內容與授權；完整解碼，調低音量並固定雜湊。非逐段人工聽審；教師可逐項預覽及全站禁播。"
+      }
+    },
+    {
+      "id": "school-meme-crickets",
+      "name": "Crickets · 冷場蟋蟀",
+      "themes": [
+        "basic"
+      ],
+      "asset": "school-sounds/meme-crickets.mp3",
+      "sha256": "7d49f7a90c61b3f5ae94899264f83a94d43ded7c4bc828293ed6e416cc7e02c1",
+      "source": "https://soundbible.com/1064-Crickets.html",
+      "author": "Mike Koenig",
+      "license": "https://creativecommons.org/licenses/by/3.0/",
+      "caption": "冷場反應 MEME，只有蟋蟀鳴叫，選用前4秒並淡出。",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "核對無對白來源／原創音訊產生碼，完整解碼，固定雜湊；教師可逐項預覽與全站禁播。非逐段人工聽審。"
+      }
+    },
+    {
+      "id": "school-meme-ba-dum-tss",
+      "name": "Ba-dum-tss · 冷笑話鼓點",
+      "themes": [
+        "basic"
+      ],
+      "asset": "school-sounds/meme-ba-dum-tss.mp3",
+      "sha256": "ca83d064b4e67c8268c4929788562785b99ce5557d7ed6a5842a586e863f0953",
+      "source": "https://github.com/YuenHK/Monopoly_Fate10/blob/main/scripts/build-meme-drum.py",
+      "author": "Monopoly Fate10 project",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "caption": "原創重現常用笑話鼓點：兩下鼓聲加鈸聲；沒有語言或外部採樣。",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "核對無對白來源／原創音訊產生碼，完整解碼，固定雜湊；教師可逐項預覽與全站禁播。非逐段人工聽審。"
+      }
+    },
+    {
+      "id": "school-cat-voice",
+      "name": "喵～ · 貓咪反應",
+      "themes": [
+        "cat"
+      ],
+      "asset": "meow.mp3",
+      "sha256": "d13de8187b5273e506f96f6ed1c675e6c8f2a6580df8795734e94006cf86de74",
+      "source": "https://commons.wikimedia.org/wiki/File:Meow.ogg",
+      "author": "Dan Crosby",
+      "license": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "caption": "原有動物叫聲；沒有語言對白。",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "沿用已核對來源動物叫聲，固定原檔雜湊；教師可預覽及全站禁播。"
+      }
+    },
+    {
+      "id": "school-dog-voice",
+      "name": "汪汪 · 狗狗反應",
+      "themes": [
+        "dog"
+      ],
+      "asset": "bark.mp3",
+      "sha256": "95cc6880c593acd7dac15e7a7dc566d200ba403e58201f519a70ace04ac51dca",
+      "source": "https://commons.wikimedia.org/wiki/File:Barking_of_a_dog.ogg",
+      "author": "Amada44",
+      "license": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "caption": "原有動物叫聲；沒有語言對白。",
+      "review": {
+        "status": "approved",
+        "policy": "school-sfx-v1",
+        "checkedAt": "2026-10-20",
+        "method": "沿用已核對來源動物叫聲，固定原檔雜湊；教師可預覽及全站禁播。"
       }
     }
   ]

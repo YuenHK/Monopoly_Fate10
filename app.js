@@ -1,8 +1,9 @@
+import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.6';
 import { celebrate } from './celebration.js';
 import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
-import { themeById } from './themes.js?v=2.6.5';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.5';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.5';
+import { themeById } from './themes.js?v=2.6.6';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.6';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.6';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -20,7 +21,7 @@ function syncMediaPreferences(){
   for(const [key,id] of [['music','music-volume'],['effects','effects-volume']]){$(id).value=devicePrefs[key];$(id+'-value').textContent=devicePrefs[key]+'%';}
   $('low-power').checked=devicePrefs.lowPower;themeVideo.hidden=reducedMedia();
   backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');
-  if(devicePrefs.music===0)bgm.pause();else if(mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
+  if(!currentTheme.music||devicePrefs.music===0)bgm.pause();else if(currentTheme.music&&mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
 }
 for(const [key,id] of [['music','music-volume'],['effects','effects-volume']])$(id).addEventListener('input',()=>{devicePrefs[key]=Number($(id).value);syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
 $('low-power').addEventListener('change',()=>{devicePrefs.lowPower=$('low-power').checked;syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
@@ -34,40 +35,41 @@ $('projection-mode').addEventListener('change',()=>project($('projection-mode').
 syncMediaPreferences();
 
 let themeLoadRevision=0;
-async function applyTheme(id){
+async function applyTheme(id,policy){
   configuredTheme=id;$('temporary-theme').value=temporaryTheme||id;
-  const request=++themeLoadRevision,theme=await withBackgroundLibrary(themeById(temporaryTheme||configuredTheme));if(request!==themeLoadRevision)return;
+  const request=++themeLoadRevision,theme=await withBackgroundLibrary(themeById(temporaryTheme||configuredTheme),{policy});if(request!==themeLoadRevision)return;
   if(themeLoaded&&theme.id===currentTheme.id&&theme.libraryRevision===currentTheme.libraryRevision)return;
-  const sameTheme=themeLoaded&&theme.id===currentTheme.id;
+  const sameMusic=themeLoaded&&theme.music===currentTheme.music;
   currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
-  if(!sameTheme){bgm.pause();sfx.pause();bgm.src=theme.music;bgm.load();}
+  sfx.pause();if(!sameMusic){bgm.pause();if(theme.music)bgm.src=theme.music;else bgm.removeAttribute('src');bgm.load();}
+  await loadSoundChoices();
   backgroundPlaylist.setTheme(theme);
   syncMediaPreferences();
-  if(mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
+  if(currentTheme.music&&mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
 }
 $('temporary-theme').addEventListener('change',()=>{
   temporaryTheme=$('temporary-theme').value;mediaUnlocked=true;
-  applyTheme(configuredTheme).catch(e=>notice(e.message,true));
+  loadTheme().catch(e=>notice(e.message,true));
 });
-async function loadTheme(){const classId=lesson?.class_id;const data=await api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''));await applyTheme(data.theme);if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}}
-bgm.addEventListener('error',()=>{if(themeLoaded)notice('主題音樂暫時未能播放，請稍後重試',true);});
+async function loadTheme(){const classId=lesson?.class_id;let data;try{data=await api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''));}catch(e){await applyTheme(configuredTheme,null);throw e;}await applyTheme(data.theme,await loadMediaPolicy({force:true}));if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}}
+bgm.addEventListener('error',()=>{if(themeLoaded&&currentTheme.music)notice('主題音樂暫時未能播放，請稍後重試',true);});
 document.addEventListener('visibilitychange',()=>backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden'));
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncMediaPreferences);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function startMedia(){mediaUnlocked=true;backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');if(!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
-function sound(){startMedia();if(muted||devicePrefs.effects===0)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，請稍後重試',true));}
-async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled&&/^school-confirmation-[1-4]$/.test(s.id)&&new RegExp('^theme-media/school-sounds/confirmation-'+s.id.slice(-1)+'\\.mp3\\?v=[a-f0-9]{64}$').test(s.url));}
+function startMedia(){mediaUnlocked=true;backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');if(currentTheme.music&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
+function sound(){startMedia();if(muted||devicePrefs.effects===0||!currentTheme.mediaAvailable||!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;sfx.play().catch(()=>notice('音效暫時未能播放，請稍後重試',true));}
+async function loadSoundChoices(){const theme=currentTheme.id;try{const data=await api('/api/sounds?theme='+theme);if(theme===currentTheme.id)soundChoices=data.items.filter(approvedSchoolSound);}catch{soundChoices=[];}}
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
 window.addEventListener('focus',()=>{loadSoundChoices().catch(()=>{});loadTheme().catch(()=>{});});
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.onmessage=()=>loadTheme().catch(()=>{});}
 setInterval(()=>{if(document.visibilityState==='visible')loadTheme().catch(()=>{});},30000);
-$('sound-toggle').addEventListener('click',()=>{muted=!muted;$('sound-toggle').textContent=muted?'🔇 音效關閉':'🔊 音效開啟';$('sound-toggle').setAttribute('aria-pressed',String(!muted));if(muted){bgm.pause();sfx.pause();}else sound();});
+$('sound-toggle').addEventListener('click',async()=>{muted=!muted;$('sound-toggle').textContent=muted?'🔇 音效關閉':'🔊 音效開啟';$('sound-toggle').setAttribute('aria-pressed',String(!muted));if(muted){bgm.pause();sfx.pause();}else{try{await loadTheme();await loadSoundChoices();sound();}catch(e){bgm.pause();sfx.pause();notice(e.message,true);}}});
 async function lobby(){
   lesson=null;await Promise.all([loadSoundChoices(),loadTheme()]);classes=await api('/api/classes');options($('class-select'),classes,'請選擇班別',c=>`${c.name} · ${c.student_count} 人`);
   if(!$('class-select').value&&classes.length)$('class-select').value=classes[0].id;
   $('lobby-controls').hidden=false;
 }
-form('lobby-controls',async()=>{startMedia();await loadTheme();await openClass($('class-select').value);});
+form('lobby-controls',async()=>{await loadTheme();await openClass($('class-select').value);startMedia();});
 function pendingKey(){return 'monopoly-pending:'+lesson.id;}
 function savePending(value){pending=value;try{if(value)sessionStorage.setItem(pendingKey(),JSON.stringify(value));else sessionStorage.removeItem(pendingKey());}catch{}$('recover').hidden=!value;}
 function lock(value){busy=value;$('temporary-theme').disabled=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}
@@ -108,10 +110,10 @@ function renderBoard(board){
 function active(){document.querySelectorAll('.cell.active').forEach(e=>e.classList.remove('active'));$('cell-'+currentIndex)?.classList.add('active');}
 async function draw(mode){
   if(busy||!lesson)return;
-  lock(true);const previousTheme=currentTheme.id;sound();
+  lock(true);
   if(!pending)savePending({requestId:crypto.randomUUID(),mode});
   try{
-    await loadTheme();if(previousTheme!==currentTheme.id)sound();
+    await loadTheme();await loadSoundChoices();sound();
     const result=await api(`/api/classes/${lesson.class_id}/draw`,pending);
     lesson.students=result.students||lesson.students;currentIndex=result.move.fromIndex;renderBoard(result.board);
     $('dice1').textContent=result.move.dice?.[0]??'⚡';$('dice2').textContent=result.move.dice?.[1]??'⚡';

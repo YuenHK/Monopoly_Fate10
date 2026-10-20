@@ -14,6 +14,7 @@ import { nextSoundSync, DEFAULT_SOUND_INTERVAL, DEFAULT_SOUND_RETRY } from './so
 import { fetchSoundCatalog, validSound } from './sound-library.mjs';
 import { mergeClassRecords } from './class-records.mjs';
 import { schoolSoundItems } from './school-sounds.mjs';
+import {mediaCatalog,parseMediaPolicy} from './media-catalog.mjs';
 import { THEMES, themeById, THEME_MEDIA } from './themes.js';
 import { readRosterWorkbook, writeRosterWorkbook, planRosterImport, rosterFingerprint } from './roster-workbook.mjs';
 
@@ -306,7 +307,8 @@ export async function createApplication(options = {}) {
         let match;
         if(path==='/api/play/theme'&&method==='GET'){const classId=url.searchParams.get('classId'),c=classId?await classRow(classId):null;return json(res,{theme:themeById(c?.theme||await setting('theme')).id,...(c?{drawMode:c.draw_mode}:{})});}
         if (path === '/api/play/classes' && method === 'GET') return json(res, await all('SELECT c.id,c.name,(SELECT count(*) FROM students WHERE class_id=c.id AND active=1) AS student_count FROM classes c WHERE archived=0 ORDER BY name'));
-        if (path === '/api/play/sounds' && method === 'GET') return json(res, {items:schoolSoundItems()});
+        if(path==='/api/play/media-policy'&&method==='GET')return json(res,parseMediaPolicy(await setting('mediaPolicy')));
+        if (path === '/api/play/sounds' && method === 'GET') {const policy=parseMediaPolicy(await setting('mediaPolicy'));return json(res,{items:schoolSoundItems({theme:url.searchParams.get('theme')||'basic',blocked:policy.blocked})});}
         if ((match = path.match(/^\/api\/play\/classes\/([^/]+)\/game$/)) && method === 'POST') {
           return json(res, await transaction(async()=>{
             const l=await classRecord(match[1]),students=await roster(l.class_id);
@@ -349,11 +351,19 @@ export async function createApplication(options = {}) {
           await transaction(async()=>{if(snapshotDigest(await backupSnapshot(db))!==preview.fingerprint)fail(409,'資料已更新，請重新預覽及備份');await applyBackup(db,preview.data);});
           dataGeneration++;backupPreviews.clear();importPreviews.clear();return json(res,{ok:true,summary:backupSummary(preview.data)});
         }
+        if(path==='/api/theme-media'&&method==='GET'){const policy=parseMediaPolicy(await setting('mediaPolicy'));return json(res,{...policy,items:mediaCatalog().map(e=>({...e,blocked:policy.blocked.includes(e.key)}))});}
+        if(path==='/api/theme-media'&&method==='PUT'){
+          const b=await body(req),current=parseMediaPolicy(await setting('mediaPolicy'));
+          if(b.revision!==current.revision)fail(409,'影音清單已被更新，請重新載入後再修改');
+          if(typeof b.blocked!=='boolean'||!mediaCatalog().some(e=>e.key===b.key))fail(400,'請選擇已核准的影音項目');
+          const keys=new Set(current.blocked);if(b.blocked)keys.add(b.key);else keys.delete(b.key);
+          const saved={revision:current.revision+1,blocked:[...keys].sort()};await put('mediaPolicy',JSON.stringify(saved));return json(res,saved);
+        }
         if(path==='/api/theme'){
           if(method==='GET')return json(res,{theme:themeById(await setting('theme')).id});
           if(method==='PUT'){
             const b=await body(req);
-            if(!THEMES.some(theme=>theme.id===b.theme))fail(400,'請選擇基礎、貓或狗主題');
+            if(!THEMES.some(theme=>theme.id===b.theme))fail(400,'請選擇迷因、貓或狗主題');
             await put('theme',b.theme);return json(res,{theme:b.theme});
           }
         }
@@ -597,7 +607,7 @@ export async function createApplication(options = {}) {
       }
       if (!['GET', 'HEAD'].includes(method)) fail(405, '不支援的操作');
       const file = path === '/' ? '/index.html' : path;
-      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/background-library.js','/background-playlist.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
+      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/background-library.js','/media-policy.js','/theme-review.js','/background-playlist.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
       if (!publicFiles.includes(file) && !/^\/sound\/bgm\.mp3$/.test(file) && file !== '/video/bg.mp4') fail(404, '找不到頁面');
       const filePath = resolve(ROOT, '.' + file);
       let stat; try { stat = statSync(filePath); } catch { fail(404, '找不到檔案'); }

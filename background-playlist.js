@@ -25,7 +25,9 @@ export function createBackgroundPlaylist(video, { random = Math.random, onFailur
   return {
     setTheme(next) {
       if (theme?.id === next.id && theme?.libraryRevision === next.libraryRevision) return;
-      video.pause(); theme = next; queue = []; failed = new Set(); exhausted = false; advance();
+      video.pause(); theme = next; queue = []; failed = new Set(); exhausted = false;
+      if(!(next.videos||[]).filter(Boolean).length&&!next.video){exhausted=true;previous=null;if(video.removeAttribute)video.removeAttribute('src');else video.src='';video.load();return;}
+      advance();
     },
     setEnabled(value, { play: start = true } = {}) {
       enabled = Boolean(value);

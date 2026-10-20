@@ -1,8 +1,12 @@
-// Read-only demonstration: synthetic students only, no API requests or draw records.
-import { themeById } from './themes.js?v=2.6.5';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.5';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.5';
-const theme=await withBackgroundLibrary(themeById(new URLSearchParams(location.search).get('theme')));
+import {celebrate} from './celebration.js';
+import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.6';
+import {apiOrigin} from './shared.js';
+// Synthetic students only. Read-only media requests; no classroom or draw writes.
+import { themeById } from './themes.js?v=2.6.6';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.6';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.6';
+const params=new URLSearchParams(location.search),themeId=themeById(params.get('theme')).id,interactive=params.get('interactive')==='1';
+let theme=await withBackgroundLibrary(themeById(themeId));
 document.body.dataset.theme=theme.id;
 const video=document.getElementById('theme-video');const playlist=createBackgroundPlaylist(video);playlist.setTheme(theme);
 let requestedPlayback=false;
@@ -28,3 +32,33 @@ for(let i=0;i<40;i++){
   else{student++;const img=document.createElement('img');img.className='avatar';img.src=portrait(student);img.alt='示範學生頭像';const name=document.createElement('span');name.className='cell-text';name.textContent='同學'+String(student).padStart(2,'0');const number=document.createElement('span');number.className='cell-number';number.textContent='4A '+student;cell.append(img,name,number);}
   const[row,col]=position(i);cell.style.gridRow=row;cell.style.gridColumn=col;board.append(cell);
 }
+
+const resultDialog=document.getElementById('simulation-result'),sound=document.getElementById('simulation-sound'),music=document.getElementById('simulation-music');
+let simulating=false,current=2;
+function mark(index){board.querySelectorAll('.cell.active').forEach(e=>e.classList.remove('active'));board.children[index+1].classList.add('active');}
+// The center area is the first board child; the following forty cells are synthetic.
+async function simulate(quick){
+ if(simulating||!interactive)return;simulating=true;
+ const buttons=[document.getElementById('roll'),document.getElementById('quick')];buttons.forEach(b=>b.disabled=true);
+ try{
+  const policy=await loadMediaPolicy({force:true});theme=await withBackgroundLibrary(themeById(themeId),{policy});playlist.setTheme(theme);playback(true);
+  sound.pause();music.pause();
+  if(theme.music){music.src=theme.music;music.volume=.1;music.play().catch(()=>{});}else{music.removeAttribute('src');music.load();}
+  try{const r=await fetch(apiOrigin()+'/api/play/sounds?theme='+themeId,{credentials:'omit',cache:'no-store'});if(!r.ok)throw Error();const data=await r.json(),items=theme.mediaAvailable?data.items.filter(approvedSchoolSound):[];if(items.length){sound.src=items[Math.floor(Math.random()*items.length)].url;sound.volume=.8;sound.play().catch(()=>{});}}catch{sound.pause();}
+  const students=Array.from(board.querySelectorAll('.cell.student')),chosen=students[Math.floor(Math.random()*students.length)],target=Array.from(board.children).indexOf(chosen)-1;
+  document.getElementById('dice1').textContent=quick?'⚡':String(1+Math.floor(Math.random()*6));document.getElementById('dice2').textContent=quick?'⚡':String(1+Math.floor(Math.random()*6));
+  document.getElementById('status-text').textContent='模擬抽獎中⋯';
+  const steps=(target-current+40)%40+40;
+  for(let n=0;n<steps;n++){current=(current+1)%40;mark(current);if(!matchMedia('(prefers-reduced-motion: reduce)').matches)await new Promise(r=>setTimeout(r,quick?5:25));}
+  document.getElementById('simulation-name').textContent=chosen.querySelector('.cell-text').textContent;
+  document.getElementById('simulation-avatar').src=chosen.querySelector('img').src;
+  document.getElementById('status-text').textContent='模擬完成 · 沒有寫入統計';resultDialog.showModal();celebrate(resultDialog,theme.effect);
+ }finally{simulating=false;buttons.forEach(b=>b.disabled=false);}
+}
+if(interactive){
+ document.getElementById('context-text').textContent='示範班別 · 可操作模擬 · 不影響任何真實學生或統計';
+ document.getElementById('draw-hint').textContent='模擬會使用目前主題的允許影音及抽中特效；所有學生均為示範資料。';
+ for(const [id,quick,label] of [['roll',false,'🎲 模擬抽獎'],['quick',true,'⚡ 快速模擬']]){const b=document.getElementById(id);b.disabled=false;b.textContent=label;b.addEventListener('click',()=>simulate(quick).catch(()=>{document.getElementById('status-text').textContent='模擬暫時未能完成，請重試';}));}
+}
+document.getElementById('close-simulation-result').addEventListener('click',()=>resultDialog.close());
+window.addEventListener('pagehide',()=>{sound.pause();music.pause();playlist.setEnabled(false);});

@@ -1,10 +1,13 @@
+import {createThemeReview} from './theme-review.js?v=2.6.6';
+import {loadMediaPolicy} from './media-policy.js?v=2.6.6';
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
-import { THEMES, themeById } from './themes.js?v=2.6.5';
+import { THEMES, themeById } from './themes.js?v=2.6.6';
 import { celebrate } from './celebration.js';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.5';
-import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.5';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.6';
+import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.6';
+const themeReview=createThemeReview({onPolicyChanged:async()=>{await loadMediaPolicy({force:true});setThemeCardPlayback(false);setThemeCardPlayback(true);await previewTheme(selectedTheme);if('BroadcastChannel' in window){const c=new BroadcastChannel('monopoly-theme');c.postMessage('updated');c.close();}}});
 const themePreviewPlaylist=createBackgroundPlaylist($('theme-preview-video'));
 let rosterPreview = null;
 let classStats = null, statsRevision = 0;
@@ -18,7 +21,7 @@ function setThemeCardPlayback(active){document.querySelectorAll('.theme-card-fra
   else frame.removeAttribute('src');
 });}
 function setTab(name) {
-  setThemeCardPlayback(name==='themes');
+  setThemeCardPlayback(name==='themes');if(name!=='themes')themeReview.stop();
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   if(name!=='themes'){$('theme-preview-audio').pause();themePreviewPlaylist.setEnabled(false);}
   for (const tab of ['classes', 'statistics', 'avatars', 'themes', 'events', 'backup']) $('tab-' + tab).hidden = tab !== name;
@@ -308,9 +311,10 @@ let selectedTheme='basic',themeRevision=0,previewRevision=0;
 async function previewTheme(id){
   const revision=++previewRevision;
   selectedTheme=id;setThemeCardPlayback(!$('tab-themes').hidden);const theme=themeById(id);$('open-theme-preview').href='theme-preview.html?theme='+theme.id;
+  themeReview.load(id).catch(e=>notice(e.message,true));
   $('theme-preview-title').textContent=theme.icon+' '+theme.name+'預覽';
   const audio=$('theme-preview-audio'),video=$('theme-preview-video');audio.pause();video.pause();
-  audio.src=theme.music;themePreviewPlaylist.setEnabled(false);const mediaTheme=await withBackgroundLibrary(theme);if(revision!==previewRevision)return;themePreviewPlaylist.setTheme(mediaTheme);themePreviewPlaylist.setEnabled(!$('tab-themes').hidden,{play:false});
+  audio.src=theme.music;audio.preload='metadata';audio.load();themePreviewPlaylist.setEnabled(false);const mediaTheme=await withBackgroundLibrary(theme);if(revision!==previewRevision)return;themePreviewPlaylist.setTheme(mediaTheme);themePreviewPlaylist.setEnabled(!$('tab-themes').hidden,{play:false});
   document.querySelectorAll('.theme-option').forEach(card=>{const active=card.dataset.theme===id;card.classList.toggle('selected',active);card.querySelector('input').checked=active;});
 }
 async function loadThemes(){
@@ -343,10 +347,12 @@ form('save-theme',async()=>{
   if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.postMessage('updated');channel.close();}
 });
 $('preview-theme-effect').addEventListener('click',()=>{
+  themeReview.stop();setThemeCardPlayback(false);$('theme-preview-audio').pause();themePreviewPlaylist.setEnabled(false);
   const theme=themeById(selectedTheme),dialog=$('theme-effect-dialog');
-  $('theme-effect-caption').textContent=theme.icon+' '+theme.name+'：'+(theme.effect==='confetti'?'經典彩炮':theme.effect==='cats'?'不同貓咪噴發':'不同狗狗噴發');
-  dialog.showModal();celebrate(dialog,theme.effect);
+  $('theme-effect-caption').textContent=theme.icon+' '+theme.name+' · 只用示範學生；沒有抽籤寫入、統計或學生連結操作。';
+  $('theme-simulation-frame').src='theme-preview.html?theme='+theme.id+'&interactive=1&play=1';dialog.showModal();
 });
+$('theme-effect-dialog').addEventListener('close',()=>{$('theme-simulation-frame').removeAttribute('src');if(!$('tab-themes').hidden){setThemeCardPlayback(true);previewTheme(selectedTheme);}});
 
 $('inherit-theme').addEventListener('change',async()=>{if($('inherit-theme').checked){try{previewTheme((await api('/api/theme')).theme);}catch(e){notice(e.message,true);}}});
 let voidTarget=null;
