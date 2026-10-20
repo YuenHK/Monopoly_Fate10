@@ -1,12 +1,12 @@
-import {createThemeReview} from './theme-review.js?v=2.6.9';
-import {loadMediaPolicy} from './media-policy.js?v=2.6.9';
+import {createThemeReview} from './theme-review.js?v=2.6.11';
+import {loadMediaPolicy} from './media-policy.js?v=2.6.11';
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
-import { THEMES, themeById } from './themes.js?v=2.6.9';
+import { THEMES, themeById } from './themes.js?v=2.6.11';
 import { celebrate } from './celebration.js';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.9';
-import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.9';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.11';
+import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.11';
 const themeReview=createThemeReview({onPolicyChanged:async()=>{await loadMediaPolicy({force:true});setThemeCardPlayback(false);setThemeCardPlayback(true);await previewTheme(selectedTheme);if('BroadcastChannel' in window){const c=new BroadcastChannel('monopoly-theme');c.postMessage('updated');c.close();}}});
 const themePreviewPlaylist=createBackgroundPlaylist($('theme-preview-video'));
 let rosterPreview = null;
@@ -314,7 +314,6 @@ async function previewTheme(id){
   themeReview.load(id).catch(e=>notice(e.message,true));
   $('theme-preview-title').textContent=theme.icon+' '+theme.name+'預覽';
   const audio=$('theme-preview-audio'),video=$('theme-preview-video');audio.pause();video.pause();
-  video.hidden=Boolean(theme.externalVideo);$('theme-preview-external').hidden=!theme.externalVideo;$('theme-preview-external-note').hidden=!theme.externalVideo;if(theme.externalVideo)$('theme-preview-external').href=theme.externalVideo.url;else $('theme-preview-external').removeAttribute('href');
   audio.src=theme.music;audio.preload='metadata';audio.load();themePreviewPlaylist.setEnabled(false);const mediaTheme=await withBackgroundLibrary(theme);if(revision!==previewRevision)return;themePreviewPlaylist.setTheme(mediaTheme);themePreviewPlaylist.setEnabled(!$('tab-themes').hidden,{play:false});
   document.querySelectorAll('.theme-option').forEach(card=>{const active=card.dataset.theme===id;card.classList.toggle('selected',active);card.querySelector('input').checked=active;});
 }
@@ -335,7 +334,7 @@ async function loadThemes(){
     card.append(input,title,preview,state,palette,node('span',theme.description));return card;
   }));
   setThemeCardPlayback(!$('tab-themes').hidden);
-  previewTheme(saved.theme);const library=await loadBackgroundLibrary();if(revision!==themeRevision)return;$('background-update-status').textContent='迷因影片：點擊開啟官方 Rick Roll 原版 MV。貓狗背景：每週一香港時間 06:15 在已審核片庫輪替；最近輪替：'+(library?.updatedAt?date(library.updatedAt):'已載入內附審核片庫')+'。新搜尋結果不會自動加入播放。';$('active-theme').textContent=($('theme-scope').value?'這班':'全站預設')+'目前使用：'+themeById(saved.theme).name+($('theme-scope').value&&$('inherit-theme').checked?'（沿用全站預設）':'');
+  previewTheme(saved.theme);const library=await loadBackgroundLibrary();if(revision!==themeRevision)return;$('background-update-status').textContent='迷因背景：使用者提供的授權 Rick Roll 原版 MV 循環播放。貓狗背景：每週一香港時間 06:15 在已審核片庫輪替；最近輪替：'+(library?.updatedAt?date(library.updatedAt):'已載入內附審核片庫')+'。新搜尋結果不會自動加入播放。';$('active-theme').textContent=($('theme-scope').value?'這班':'全站預設')+'目前使用：'+themeById(saved.theme).name+($('theme-scope').value&&$('inherit-theme').checked?'（沿用全站預設）':'');
   tabCount('themes-tab-count','3 款','3 款主題，目前使用'+themeById(saved.theme).name);
 }
 form('save-theme',async()=>{
@@ -358,7 +357,7 @@ $('theme-effect-dialog').addEventListener('close',()=>{$('theme-simulation-frame
 $('inherit-theme').addEventListener('change',async()=>{if($('inherit-theme').checked){try{previewTheme((await api('/api/theme')).theme);}catch(e){notice(e.message,true);}}});
 let voidTarget=null;
 form('void-draw-form',async()=>{if(!voidTarget)return;const d=voidTarget;await api('/api/draws/'+d.id+'/void',{voided:!d.voided,reason:d.voided?'':$('void-reason').value},'PUT');$('void-draw-dialog').close();await loadClassStats();await refreshCountBadges();notice(d.voided?'已恢復計入統計':'已標記不計入統計，原始紀錄保留');});
-window.addEventListener('message',event=>{if(event.origin!==location.origin||event.data?.type!=='theme-preview-status')return;for(const frame of document.querySelectorAll('.theme-card-frame'))if(event.source===frame.contentWindow){const state=frame.closest('.theme-option').querySelector('.theme-play-state');state.textContent=frame.dataset.theme==='basic'?(event.data.external?'點擊連結開啟官方原版 MV':'原版 MV 連結已禁播或暫未載入'):event.data.playing?'背景影片播放中':'背景影片已暫停';}});
+window.addEventListener('message',event=>{if(event.origin!==location.origin||event.data?.type!=='theme-preview-status')return;for(const frame of document.querySelectorAll('.theme-card-frame'))if(event.source===frame.contentWindow){const state=frame.closest('.theme-option').querySelector('.theme-play-state');state.textContent=event.data.playing?'背景影片播放中':'背景影片已暫停';}});
 $('theme-scope').addEventListener('change',()=>loadThemes().catch(e=>notice(e.message,true)));
 form('save-class-preferences',async()=>{await api('/api/classes/'+$('class-select').value+'/preferences',{drawMode:$('class-draw-mode').value,theme:$('class-theme').value||null},'PUT');notice('班別抽籤方式及主題已儲存');if('BroadcastChannel' in window){const c=new BroadcastChannel('monopoly-theme');c.postMessage('updated');c.close();}});
 async function refreshCountBadges(){const rows=await api('/api/classes?includeArchived=1');updateStatsBadge(rows);}
