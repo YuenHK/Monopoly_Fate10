@@ -1,0 +1,68 @@
+name: Refresh weekly classroom background videos
+on:
+  schedule:
+    # UTC Sunday 22:15 = Hong Kong Monday 06:15.
+    - cron: '15 22 * * 0'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Refresh again even if this week is already updated
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  refresh-and-publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install video encoder
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+      - name: Fetch and validate three licensed clips
+        env:
+          FORCE_REFRESH: ${{ inputs.force }}
+        run: |
+          args=()
+          if [ "$FORCE_REFRESH" = "true" ]; then args+=(--force); fi
+          python3 scripts/refresh-background-library.py "${args[@]}"
+      - run: npm ci
+      - run: npm test
+      - run: python3 -m unittest discover -s tests -p '*_test.py'
+      - name: Save the verified library
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add theme-media/library.json theme-media/credits.html theme-media/meme-emoji.mp4 theme-media/meme-ladle.mp4 theme-media/meme-mop.mp4 theme-media/cat-play.mp4 theme-media/cat-sleep.mp4 theme-media/cat-ball.mp4 theme-media/dog-play.mp4 theme-media/dog-sleep.mp4 theme-media/dog-outdoor.mp4
+          if ! git diff --cached --quiet; then
+            git commit -m 'Refresh weekly licensed classroom backgrounds'
+            git push origin HEAD:main
+          fi
+      - name: Build public board
+        run: node scripts/build-pages.mjs
+        env:
+          RENDER_APP_URL: ${{ vars.RENDER_APP_URL }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-dist
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
