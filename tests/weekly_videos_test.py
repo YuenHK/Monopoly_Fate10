@@ -9,7 +9,7 @@ class Weekly(unittest.TestCase):
   shutil.copytree(src/'approved',media/'approved');data=json.loads((media/'library.json').read_text());data.pop('updatedWeek',None);(media/'library.json').write_text(json.dumps(data))
   for names in m.ALLOWED_FILES.values():
    for name in names:(media/name).write_bytes(b'original-output')
- def test_basic_has_no_background_and_pet_themes_stay_separate_across_cycle(self):
+ def test_fixed_meme_background_is_not_replaced_by_pet_rotation(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);self.fixture(root)
    for week in range(4):
@@ -17,6 +17,7 @@ class Weekly(unittest.TestCase):
     clips=json.loads((root/'theme-media/library.json').read_text())['clips']
     basic={c['approvedId'] for c in clips if c['theme']=='basic'}
     self.assertEqual(basic,set())
+    self.assertTrue((root/'theme-media/approved/rickroll-original.mp4').exists())
     for c in clips:
      if c['theme'] in ('cat','dog'):self.assertTrue(c['approvedId'].startswith(c['theme']+'-'))
  def test_offline_rotation_then_skip_and_next_week(self):
