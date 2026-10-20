@@ -135,3 +135,9 @@ npm test
 ## 原作及授權
 
 基於 DigitalTeacherHK 的[大富翁抽籤](https://sites.google.com/view/digitalteacherhk-monopoly)改良，沿用原專案版權說明：版權屬原作者 DigitalTeacherHK 所有。原庫未提供獨立 LICENSE，本專案沒有另行指定開源授權。音效及原有視聽素材權利歸各原作者。
+
+### v2.6.1 背景影片輪播
+
+三款主題各有 3 條已核對來源授權的短片，靜音隨機輪播；每輪播放完 3 條才重新洗牌，避免前後兩輪接連播放同一條。直向片使用模糊側邊填滿橫向畫面，保留主角。既有半透明棋盤、文字保護底色、音樂及抽籤特效維持原設定。失效素材會跳過，整組無法播放時使用原有內附影片作後備；低耗能／減少動態效果及非使用中後台卡片會暫停。
+
+來源、作者、授權及修改說明見 `theme-media/credits.html` 與 `theme-media/library.json`。Pexels 與 Mixkit Stock Video Free License 素材只隨本網站背景使用，不另行指定開源授權，也不是獨立素材下載庫。搞笑組為授權搞笑素材，並非聲稱全網最熱門 Reels。所有影片隨站提供，播放不需連接 YouTube／Instagram 或第三方影片 API。

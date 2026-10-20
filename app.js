@@ -1,12 +1,14 @@
 import { celebrate } from './celebration.js';
 import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
 import { themeById } from './themes.js';
+import { createBackgroundPlaylist } from './background-playlist.js';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
 let currentTheme=themeById('basic'),themeLoaded=false,mediaUnlocked=false;
 const bgm=$('bgm'),sfx=$('sfx'); bgm.volume=.1;
 const themeVideo=$('theme-video');
+const backgroundPlaylist=createBackgroundPlaylist(themeVideo,{onFailure:()=>notice('主題背景影片暫時未能播放，請稍後重試',true)});
 let devicePrefs={music:10,effects:100,lowPower:matchMedia('(prefers-reduced-motion: reduce)').matches};
 try{const saved=JSON.parse(localStorage.getItem('monopoly-playback')||'null');if(saved){for(const key of ['music','effects'])if(Number.isFinite(saved[key]))devicePrefs[key]=Math.max(0,Math.min(100,saved[key]));if(typeof saved.lowPower==='boolean')devicePrefs.lowPower=saved.lowPower;}}catch{}
 const reducedMedia=()=>devicePrefs.lowPower||matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -14,7 +16,7 @@ function syncMediaPreferences(){
   bgm.volume=devicePrefs.music/100;sfx.volume=devicePrefs.effects/100;
   for(const [key,id] of [['music','music-volume'],['effects','effects-volume']]){$(id).value=devicePrefs[key];$(id+'-value').textContent=devicePrefs[key]+'%';}
   $('low-power').checked=devicePrefs.lowPower;themeVideo.hidden=reducedMedia();
-  if(reducedMedia())themeVideo.pause();else if(themeLoaded)themeVideo.play().catch(()=>{});
+  backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');
   if(devicePrefs.music===0)bgm.pause();else if(mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
 }
 for(const [key,id] of [['music','music-volume'],['effects','effects-volume']])$(id).addEventListener('input',()=>{devicePrefs[key]=Number($(id).value);syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
@@ -27,16 +29,16 @@ function applyTheme(id){
   const theme=themeById(id);if(themeLoaded&&theme.id===currentTheme.id)return;
   currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
   bgm.pause();sfx.pause();bgm.src=theme.music;bgm.load();
-  const reduced=reducedMedia();
-  themeVideo.pause();themeVideo.autoplay=!reduced;themeVideo.src=theme.video;themeVideo.load();
-  if(!reduced)themeVideo.play().catch(()=>{});
+  backgroundPlaylist.setTheme(theme);
+  syncMediaPreferences();
   if(mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
 }
 async function loadTheme(){const classId=lesson?.class_id;const data=await api('/api/theme'+(classId?'?classId='+encodeURIComponent(classId):''));applyTheme(data.theme);if(lesson&&data.drawMode){lesson.draw_mode=data.drawMode;$('roll').textContent=data.drawMode==='equal'?'🎲 等機率抽籤':'🎲 擲骰子';}}
 bgm.addEventListener('error',()=>{if(themeLoaded)notice('主題音樂暫時未能播放，請稍後重試',true);});
-themeVideo.addEventListener('error',()=>{if(themeLoaded)notice('主題背景影片暫時未能播放，請稍後重試',true);});
+document.addEventListener('visibilitychange',()=>backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden'));
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncMediaPreferences);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function startMedia(){mediaUnlocked=true;if(!reducedMedia())themeVideo.play().catch(()=>{});if(!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
+function startMedia(){mediaUnlocked=true;backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');if(!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
 function sound(){startMedia();if(muted||devicePrefs.effects===0)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
 async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled);}
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
