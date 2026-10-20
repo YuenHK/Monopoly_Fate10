@@ -1,5 +1,7 @@
 import {validateSchoolVideos} from './validate-school-videos.mjs';
 await validateSchoolVideos();
+import {schoolSoundItems} from '../school-sounds.mjs';
+schoolSoundItems();
 import {mkdir,writeFile,readFile,copyFile,cp,rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 const value = process.env.RENDER_APP_URL;
@@ -11,7 +13,8 @@ await rm(out,{recursive:true,force:true});
 await mkdir(out,{recursive:true});
 // Publish only the public board and its assets; admin, upload and private data stay on Render.
 for(const file of ['app.js','shared.js','ui.css','board.css','celebration.js','favicon.svg','themes.js','background-library.js','background-playlist.js','themes.css'])await copyFile(file,resolve(out,file));
-for(const dir of ['sound','theme-media'])await cp(dir,resolve(out,dir),{recursive:true});
+await mkdir(resolve(out,'sound'),{recursive:true});await copyFile('sound/bgm.mp3',resolve(out,'sound/bgm.mp3'));
+for(const dir of ['theme-media'])await cp(dir,resolve(out,dir),{recursive:true});
 const html=(await readFile('index.html','utf8')).replace('<script type="module"','<script src="play-config.js"></script><script type="module"');
 await writeFile(resolve(out,'index.html'),html);
 await writeFile(resolve(out,'play-config.js'),'globalThis.MONOPOLY_API_ORIGIN='+JSON.stringify(url.origin)+';\n');
