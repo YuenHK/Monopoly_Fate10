@@ -609,7 +609,7 @@ export async function createApplication(options = {}) {
       }
       if (!['GET', 'HEAD'].includes(method)) fail(405, '不支援的操作');
       const file = path === '/' ? '/index.html' : path;
-      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/background-library.js','/media-policy.js','/sound-title-policy.js','/theme-review.js','/background-playlist.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
+      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/play-performance.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/background-library.js','/media-policy.js','/sound-title-policy.js','/theme-review.js','/background-playlist.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
       if (!publicFiles.includes(file) && !/^\/sound\/bgm\.mp3$/.test(file) && file !== '/video/bg.mp4') fail(404, '找不到頁面');
       const filePath = resolve(ROOT, '.' + file);
       let stat; try { stat = statSync(filePath); } catch { fail(404, '找不到檔案'); }

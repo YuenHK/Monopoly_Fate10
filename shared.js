@@ -1,15 +1,20 @@
 export const $ = id => document.getElementById(id);
 export const apiOrigin = () => globalThis.MONOPOLY_API_ORIGIN || '';
 export async function playApi(path, data, method = data === undefined ? 'GET' : 'POST') {
-  const response = await fetch(apiOrigin() + path.replace(/^\/api\//, '/api/play/'), {
-    method, credentials: 'omit', cache: 'no-store',
-    ...(data === undefined ? {} : {headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
-  });
-  let result;
-  try { result = await response.json(); } catch { throw new Error('伺服器正在喚醒或暫時未能回應，請稍後重新載入'); }
-  if (!response.ok) throw Object.assign(new Error(result.error || '操作失敗'), {status:response.status});
-  return result;
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),75000);
+  try{
+    const response = await fetch(apiOrigin() + path.replace(/^\/api\//, '/api/play/'), {
+      method, credentials: 'omit', cache: 'no-store',signal:controller.signal,
+      ...(data === undefined ? {} : {headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    });
+    let result;
+    try { result = await response.json(); } catch(error) { if(controller.signal.aborted)throw error;throw new Error('伺服器正在喚醒或暫時未能回應'); }
+    if (!response.ok) throw Object.assign(new Error(result.error || '操作失敗'), {status:response.status});
+    return result;
+  }catch(error){if(controller.signal.aborted)throw new Error('連接逾時，伺服器可能仍在喚醒');throw error;}
+  finally{clearTimeout(timer);}
 }
+
 export async function api(path, data, method = data === undefined ? 'GET' : 'POST') {
   const response = await fetch(path, {
     method, credentials: 'same-origin', cache: 'no-store',
