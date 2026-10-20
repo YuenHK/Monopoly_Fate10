@@ -69,7 +69,7 @@ async function lobby(){
   if(!$('class-select').value&&classes.length)$('class-select').value=classes[0].id;
   $('lobby-controls').hidden=false;
 }
-form('lobby-controls',async()=>{startMedia();await loadTheme();await openClass($('class-select').value);});
+form('lobby-controls',async()=>{await loadTheme();await openClass($('class-select').value);startMedia();});
 function pendingKey(){return 'monopoly-pending:'+lesson.id;}
 function savePending(value){pending=value;try{if(value)sessionStorage.setItem(pendingKey(),JSON.stringify(value));else sessionStorage.removeItem(pendingKey());}catch{}$('recover').hidden=!value;}
 function lock(value){busy=value;$('temporary-theme').disabled=value;for(const id of ['roll','quick','change-lesson','recover'])$(id).disabled=value||Boolean(lesson?.closed);}
