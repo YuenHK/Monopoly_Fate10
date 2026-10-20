@@ -1,7 +1,7 @@
 import { celebrate } from './celebration.js';
 import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
-import { themeById } from './themes.js';
-import { createBackgroundPlaylist } from './background-playlist.js';
+import { themeById } from './themes.js?v=2.6.1';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.1';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
