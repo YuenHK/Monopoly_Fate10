@@ -185,6 +185,29 @@
         "method": "全段每 0.25 秒抽幀檢查並核對來源；不是逐幀觀看或教師親自審批。",
         "observations": "兩隻小狗在室內短暫跳起及走動，沒有互相翻滾。"
       }
+    },
+    {
+      "id": "rickroll-original",
+      "title": "Rick Astley — Never Gonna Give You Up（授權原版 MV）",
+      "themes": [
+        "basic"
+      ],
+      "asset": "approved/rickroll-original.mp4",
+      "sha256": "668495508ee5ef6b69aad1af2b4a6c007bd7bee132215669f45ee8fa641223a1",
+      "source": "使用者提供 videoplayback.mp4",
+      "author": "Rick Astley／原權利人",
+      "licenseName": "使用者聲明已取得網站播放授權",
+      "license": "使用者提供授權；未另行查證授權文件",
+      "modifications": "完整 3 分 33 秒影片；轉為 960×540 H.264 MP4，faststart，靜音背景。",
+      "review": {
+        "status": "approved",
+        "policy": "school-v1",
+        "checkedAt": "2026-10-20",
+        "reviewer": "User supplied licensed original MV; Codex sampled visual check",
+        "method": "使用者指定原版 MV；每 15 秒抽幀檢查，並非逐幀聽審。",
+        "observations": "原版歌舞演出及日常穿着；靜音背景播放。"
+      },
+      "licenseType": "user-provided"
     }
   ]
 }
