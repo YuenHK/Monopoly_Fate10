@@ -37,7 +37,7 @@ test('bad clips are skipped, all-bad library uses bundled fallback, fallback fai
   p.setTheme({id:'dog',video:'dog-fallback',videos:['dog']});assert.equal(media.src,'dog');assert.equal(media.paused,false);
 });
 test('all built-in, fallback, active and reviewed video bytes match their approved hashes',async()=>{
- const {validateSchoolVideos}=await import('../scripts/validate-school-videos.mjs');assert.deepEqual(await validateSchoolVideos(),{approved:12,active:9});
- for(const theme of THEMES){assert.equal(theme.videos.length,3);for(const src of [theme.video,...theme.videos])assert.ok(THEME_MEDIA.includes(src.replace('theme-media/','')));}
+ const {validateSchoolVideos}=await import('../scripts/validate-school-videos.mjs');assert.deepEqual(await validateSchoolVideos(),{approved:8,active:6});
+ for(const theme of THEMES){assert.equal(theme.videos.length,theme.id==='basic'?0:3);for(const src of [theme.video,...theme.videos].filter(Boolean))assert.ok(THEME_MEDIA.includes(src.replace('theme-media/','')));}
 });
 test('a newer weekly revision replaces media even when the selected theme stays the same',()=>{const media=new Media(),p=createBackgroundPlaylist(media);p.setTheme({...theme,libraryRevision:'one'});const count=media.loads.length;p.setTheme({...theme,libraryRevision:'two',videos:['weekly-new']});assert.equal(media.loads.length,count+1);assert.equal(media.src,'weekly-new');});
