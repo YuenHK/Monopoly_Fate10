@@ -41,3 +41,4 @@ test('each theme has three licensed bundled MP4 clips with source and modificati
   assert.equal(manifest.clips.length,9);
   for(const theme of THEMES){assert.equal(theme.videos.length,3);for(const src of theme.videos){assert.ok(THEME_MEDIA.includes(src.replace('theme-media/','')));const c=manifest.clips.find(c=>'theme-media/'+c.file===src);assert.ok(c?.source.startsWith('https://'));assert.ok(c?.license.startsWith('https://'));const bytes=await readFile(new URL('../'+src,import.meta.url));assert.equal(bytes.toString('ascii',4,8),'ftyp');assert.ok(bytes.length>10000);}}
 });
+test('a newer weekly revision replaces media even when the selected theme stays the same',()=>{const media=new Media(),p=createBackgroundPlaylist(media);p.setTheme({...theme,libraryRevision:'one'});const count=media.loads.length;p.setTheme({...theme,libraryRevision:'two',videos:['weekly-new']});assert.equal(media.loads.length,count+1);assert.equal(media.src,'weekly-new');});
