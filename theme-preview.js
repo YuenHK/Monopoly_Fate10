@@ -1,9 +1,13 @@
 // Read-only demonstration: synthetic students only, no API requests or draw records.
-import { themeById } from './themes.js';
+import { themeById } from './themes.js?v=2.6.1';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.1';
 const theme=themeById(new URLSearchParams(location.search).get('theme'));
 document.body.dataset.theme=theme.id;
-const video=document.getElementById('theme-video');video.src=theme.video;
-function playback(playing){const active=playing&&!matchMedia('(prefers-reduced-motion: reduce)').matches;video.autoplay=active;video.preload='auto';if(active)video.play().catch(()=>{});else video.pause();}
+const video=document.getElementById('theme-video');const playlist=createBackgroundPlaylist(video);playlist.setTheme(theme);
+let requestedPlayback=false;
+function playback(playing){requestedPlayback=playing;const active=playing&&document.visibilityState!=='hidden'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;video.preload=active?'auto':'metadata';playlist.setEnabled(active);}
+document.addEventListener('visibilitychange',()=>playback(requestedPlayback));
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>playback(requestedPlayback));
 const report=()=>{if(parent!==window)parent.postMessage({type:'theme-preview-status',playing:!video.paused&&video.readyState>=2},location.origin);};
 for(const event of ['play','pause','loadeddata','canplay','error'])video.addEventListener(event,report);
 playback(new URLSearchParams(location.search).get('play')!=='0');

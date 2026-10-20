@@ -8,7 +8,7 @@ const out=resolve('pages-dist');
 await rm(out,{recursive:true,force:true});
 await mkdir(out,{recursive:true});
 // Publish only the public board and its assets; admin, upload and private data stay on Render.
-for(const file of ['app.js','shared.js','ui.css','board.css','celebration.js','favicon.svg','themes.js','themes.css'])await copyFile(file,resolve(out,file));
+for(const file of ['app.js','shared.js','ui.css','board.css','celebration.js','favicon.svg','themes.js','background-playlist.js','themes.css'])await copyFile(file,resolve(out,file));
 for(const dir of ['sound','theme-media'])await cp(dir,resolve(out,dir),{recursive:true});
 const html=(await readFile('index.html','utf8')).replace('<script type="module"','<script src="play-config.js"></script><script type="module"');
 await writeFile(resolve(out,'index.html'),html);

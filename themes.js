@@ -1,7 +1,7 @@
 export const THEMES = Object.freeze([
-  {id:'basic',name:'基礎主題',icon:'🎲',colors:['#e8eee6','#cf3444','#ffdc74'],music:'sound/bgm.mp3',sound:null,video:'theme-media/meme.mp4',effect:'confetti',avatar:'🐱',description:'原有配色 · MEME 音樂 · 經典彩炮 · 迷因循環影片'},
-  {id:'cat',name:'貓主題',icon:'🐱',colors:['#fff0df','#bd6948','#e8aa91'],music:'theme-media/cat-music.mp3',sound:'theme-media/meow.mp3',video:'theme-media/cat.mp4',effect:'cats',avatar:'🐱',description:'奶油橘配色 · 喵聲節奏音樂 · 貓咪噴發 · 貓咪循環影片'},
-  {id:'dog',name:'狗主題',icon:'🐶',colors:['#f1e4cf','#956037','#8cbfc1'],music:'theme-media/dog-music.mp3',sound:'theme-media/bark.mp3',video:'theme-media/dog.mp4',effect:'dogs',avatar:'🐶',description:'暖棕配色 · 汪聲節奏音樂 · 狗狗噴發 · 狗狗循環影片'}
+  {id:'basic',name:'基礎主題',icon:'🎲',colors:['#e8eee6','#cf3444','#ffdc74'],music:'sound/bgm.mp3',sound:null,video:'theme-media/meme.mp4',videos:['theme-media/meme-emoji.mp4','theme-media/meme-ladle.mp4','theme-media/meme-mop.mp4'],effect:'confetti',avatar:'🐱',description:'原有配色 · MEME 音樂 · 經典彩炮 · 3 條搞笑影片輪播'},
+  {id:'cat',name:'貓主題',icon:'🐱',colors:['#fff0df','#bd6948','#e8aa91'],music:'theme-media/cat-music.mp3',sound:'theme-media/meow.mp3',video:'theme-media/cat.mp4',videos:['theme-media/cat-play.mp4','theme-media/cat-sleep.mp4','theme-media/cat-ball.mp4'],effect:'cats',avatar:'🐱',description:'奶油橘配色 · 喵聲節奏音樂 · 貓咪噴發 · 3 條小貓影片輪播'},
+  {id:'dog',name:'狗主題',icon:'🐶',colors:['#f1e4cf','#956037','#8cbfc1'],music:'theme-media/dog-music.mp3',sound:'theme-media/bark.mp3',video:'theme-media/dog.mp4',videos:['theme-media/dog-play.mp4','theme-media/dog-sleep.mp4','theme-media/dog-outdoor.mp4'],effect:'dogs',avatar:'🐶',description:'暖棕配色 · 汪聲節奏音樂 · 狗狗噴發 · 3 條小狗影片輪播'}
 ]);
 export function themeById(id){return THEMES.find(theme=>theme.id===id)||THEMES[0];}
-export const THEME_MEDIA = ['meme.mp4','cat.mp4','dog.mp4','cat-music.mp3','dog-music.mp3','meow.mp3','bark.mp3','credits.html','basic-preview.svg','cat-preview.svg','dog-preview.svg'];
+export const THEME_MEDIA = ['meme.mp4','cat.mp4','dog.mp4','cat-music.mp3','dog-music.mp3','meow.mp3','bark.mp3','credits.html','library.json','basic-preview.svg','cat-preview.svg','dog-preview.svg',...THEMES.flatMap(theme=>theme.videos.map(src=>src.replace('theme-media/','')))];

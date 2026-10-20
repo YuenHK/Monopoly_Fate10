@@ -596,11 +596,11 @@ export async function createApplication(options = {}) {
       }
       if (!['GET', 'HEAD'].includes(method)) fail(405, '不支援的操作');
       const file = path === '/' ? '/index.html' : path;
-      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
+      const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/background-playlist.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
       if (!publicFiles.includes(file) && !/^\/sound\/(?:bgm|[1-9]|[12][0-9]|3[0-8])\.mp3$/.test(file) && file !== '/video/bg.mp4') fail(404, '找不到頁面');
       const filePath = resolve(ROOT, '.' + file);
       let stat; try { stat = statSync(filePath); } catch { fail(404, '找不到檔案'); }
-      const type = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8', svg: 'image/svg+xml', mp3: 'audio/mpeg', mp4: 'video/mp4' }[file.split('.').pop()];
+      const type = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json; charset=utf-8', css: 'text/css; charset=utf-8', svg: 'image/svg+xml', mp3: 'audio/mpeg', mp4: 'video/mp4' }[file.split('.').pop()];
       let start = 0, end = stat.size - 1, status = 200;
       const range = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || '');
       if (range) { start = Number(range[1]); end = range[2] ? Math.min(Number(range[2]), end) : end; if (start > end) { res.setHeader('Content-Range', `bytes */${stat.size}`); fail(416, '無效的檔案範圍'); } status = 206; res.setHeader('Content-Range', `bytes ${start}-${end}/${stat.size}`); }

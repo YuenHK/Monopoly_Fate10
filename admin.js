@@ -1,8 +1,10 @@
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
-import { THEMES, themeById } from './themes.js';
+import { THEMES, themeById } from './themes.js?v=2.6.1';
 import { celebrate } from './celebration.js';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.1';
+const themePreviewPlaylist=createBackgroundPlaylist($('theme-preview-video'));
 let rosterPreview = null;
 let classStats = null, statsRevision = 0;
 let classes = [], students = [], avatarRows = [], setupRequired = false;
@@ -18,7 +20,7 @@ function setTab(name) {
   setThemeCardPlayback(name==='themes');
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   if(name!=='sounds')$('sound-preview').pause();
-  if(name!=='themes'){$('theme-preview-audio').pause();$('theme-preview-video').pause();}
+  if(name!=='themes'){$('theme-preview-audio').pause();themePreviewPlaylist.setEnabled(false);}
   for (const tab of ['classes', 'statistics', 'avatars', 'sounds', 'themes', 'events', 'backup']) $('tab-' + tab).hidden = tab !== name;
 }
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
@@ -28,7 +30,7 @@ document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click',
 }));
 async function showAuth() {
   setThemeCardPlayback(false);
-  $('theme-preview-audio').pause();$('theme-preview-video').pause();
+  $('theme-preview-audio').pause();themePreviewPlaylist.setEnabled(false);
   setupRequired = (await api('/api/status')).setupRequired;
   $('auth').hidden = false; $('workspace').hidden = true; $('logout').hidden = true;
   $('setup-code-label').hidden = !setupRequired; $('setup-code').required = setupRequired;
@@ -356,7 +358,7 @@ function previewTheme(id){
   selectedTheme=id;setThemeCardPlayback(!$('tab-themes').hidden);const theme=themeById(id);$('open-theme-preview').href='theme-preview.html?theme='+theme.id;
   $('theme-preview-title').textContent=theme.icon+' '+theme.name+'預覽';
   const audio=$('theme-preview-audio'),video=$('theme-preview-video');audio.pause();video.pause();
-  audio.src=theme.music;video.src=theme.video;
+  audio.src=theme.music;themePreviewPlaylist.setEnabled(false);themePreviewPlaylist.setTheme(theme);themePreviewPlaylist.setEnabled(true,{play:false});
   document.querySelectorAll('.theme-option').forEach(card=>{const active=card.dataset.theme===id;card.classList.toggle('selected',active);card.querySelector('input').checked=active;});
 }
 async function loadThemes(){
