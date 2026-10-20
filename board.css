@@ -16,4 +16,4 @@
 #display-settings{position:static}.game-page .topbar{position:relative;z-index:20}.display-settings-panel{right:16px}
 
 /* Keep center text readable while the video shows through the board. */
-#center-area :is(.board-eyebrow,#status-text,.board-hint,.last-result:not(:empty)){background:color-mix(in srgb,var(--theme-center-tint,#edf2e4) 92%,transparent);box-shadow:0 0 10px 5px color-mix(in srgb,var(--theme-center-tint,#edf2e4) 92%,transparent);border-radius:6px}
+#center-area :is(.board-eyebrow,#status-text,.board-hint,.last-result:not(:empty)){background:color-mix(in srgb,var(--theme-center-tint,#edf2e4) 99%,transparent);box-shadow:0 0 10px 5px color-mix(in srgb,var(--theme-center-tint,#edf2e4) 99%,transparent);border-radius:6px}
