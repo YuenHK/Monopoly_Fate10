@@ -1,7 +1,7 @@
 // Read-only demonstration: synthetic students only, no API requests or draw records.
-import { themeById } from './themes.js?v=2.6.4';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.4';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.4';
+import { themeById } from './themes.js?v=2.6.5';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.5';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.5';
 const theme=await withBackgroundLibrary(themeById(new URLSearchParams(location.search).get('theme')));
 document.body.dataset.theme=theme.id;
 const video=document.getElementById('theme-video');const playlist=createBackgroundPlaylist(video);playlist.setTheme(theme);

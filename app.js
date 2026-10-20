@@ -35,7 +35,7 @@ syncMediaPreferences();
 
 let themeLoadRevision=0;
 async function applyTheme(id){
-  configuredTheme=id;
+  configuredTheme=id;$('temporary-theme').value=temporaryTheme||id;
   const request=++themeLoadRevision,theme=await withBackgroundLibrary(themeById(temporaryTheme||configuredTheme));if(request!==themeLoadRevision)return;
   if(themeLoaded&&theme.id===currentTheme.id&&theme.libraryRevision===currentTheme.libraryRevision)return;
   const sameTheme=themeLoaded&&theme.id===currentTheme.id;
@@ -55,7 +55,7 @@ document.addEventListener('visibilitychange',()=>backgroundPlaylist.setEnabled(!
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncMediaPreferences);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function startMedia(){mediaUnlocked=true;backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');if(!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
-function sound(){startMedia();if(muted||devicePrefs.effects===0)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
+function sound(){startMedia();if(muted||devicePrefs.effects===0)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，請稍後重試',true));}
 async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled);}
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
 window.addEventListener('focus',()=>{loadSoundChoices().catch(()=>{});loadTheme().catch(()=>{});});
