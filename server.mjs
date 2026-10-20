@@ -13,6 +13,7 @@ import { publicStudent, studentKey, studentDisplay } from './student-identity.js
 import { nextSoundSync, DEFAULT_SOUND_INTERVAL, DEFAULT_SOUND_RETRY } from './sound-sync.mjs';
 import { fetchSoundCatalog, validSound } from './sound-library.mjs';
 import { mergeClassRecords } from './class-records.mjs';
+import { schoolSoundItems } from './school-sounds.mjs';
 import { THEMES, themeById, THEME_MEDIA } from './themes.js';
 import { readRosterWorkbook, writeRosterWorkbook, planRosterImport, rosterFingerprint } from './roster-workbook.mjs';
 
@@ -305,7 +306,7 @@ export async function createApplication(options = {}) {
         let match;
         if(path==='/api/play/theme'&&method==='GET'){const classId=url.searchParams.get('classId'),c=classId?await classRow(classId):null;return json(res,{theme:themeById(c?.theme||await setting('theme')).id,...(c?{drawMode:c.draw_mode}:{})});}
         if (path === '/api/play/classes' && method === 'GET') return json(res, await all('SELECT c.id,c.name,(SELECT count(*) FROM students WHERE class_id=c.id AND active=1) AS student_count FROM classes c WHERE archived=0 ORDER BY name'));
-        if (path === '/api/play/sounds' && method === 'GET') return json(res, {items:(await soundState()).items.filter(s=>s.enabled).map(({id,name,url})=>({id,name,url,enabled:true}))});
+        if (path === '/api/play/sounds' && method === 'GET') return json(res, {items:schoolSoundItems()});
         if ((match = path.match(/^\/api\/play\/classes\/([^/]+)\/game$/)) && method === 'POST') {
           return json(res, await transaction(async()=>{
             const l=await classRecord(match[1]),students=await roster(l.class_id);
@@ -597,10 +598,10 @@ export async function createApplication(options = {}) {
       if (!['GET', 'HEAD'].includes(method)) fail(405, '不支援的操作');
       const file = path === '/' ? '/index.html' : path;
       const publicFiles = ['/index.html','/admin.html','/student.html','/app.js','/admin.js','/student.js','/shared.js','/event-format.js','/student-identity.js','/ui.css','/board.css','/celebration.js','/favicon.svg','/themes.js','/background-library.js','/background-playlist.js','/themes.css','/theme-preview.html','/theme-preview.js',...THEME_MEDIA.map(name=>'/theme-media/'+name)];
-      if (!publicFiles.includes(file) && !/^\/sound\/(?:bgm|[1-9]|[12][0-9]|3[0-8])\.mp3$/.test(file) && file !== '/video/bg.mp4') fail(404, '找不到頁面');
+      if (!publicFiles.includes(file) && !/^\/sound\/bgm\.mp3$/.test(file) && file !== '/video/bg.mp4') fail(404, '找不到頁面');
       const filePath = resolve(ROOT, '.' + file);
       let stat; try { stat = statSync(filePath); } catch { fail(404, '找不到檔案'); }
-      const type = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json; charset=utf-8', css: 'text/css; charset=utf-8', svg: 'image/svg+xml', mp3: 'audio/mpeg', mp4: 'video/mp4' }[file.split('.').pop()];
+      const type = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json; charset=utf-8', txt: 'text/plain; charset=utf-8', css: 'text/css; charset=utf-8', svg: 'image/svg+xml', mp3: 'audio/mpeg', mp4: 'video/mp4' }[file.split('.').pop()];
       let start = 0, end = stat.size - 1, status = 200;
       const range = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || '');
       if (range) { start = Number(range[1]); end = range[2] ? Math.min(Number(range[2]), end) : end; if (start > end) { res.setHeader('Content-Range', `bytes */${stat.size}`); fail(416, '無效的檔案範圍'); } status = 206; res.setHeader('Content-Range', `bytes ${start}-${end}/${stat.size}`); }
@@ -623,7 +624,7 @@ export async function createApplication(options = {}) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const app = (await createApplication({autoSoundSync:process.env.SOUND_AUTO_SYNC!=='false'}));
+  const app = (await createApplication({autoSoundSync:false}));
   const port = Number(process.env.PORT || 3000);
   app.server.listen(port, process.env.HOST || '127.0.0.1', () => {
     console.log(`大富翁抽籤：http://localhost:${port}\n管理後台：http://localhost:${port}/admin.html`);

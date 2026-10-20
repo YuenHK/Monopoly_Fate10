@@ -197,7 +197,7 @@ for (const backend of ['SQLite','PostgreSQL']) {
         assert.equal((await call(`/api/classes/${c}/stats`)).body.draws.length,1);
         assert.equal((await call(`/api/play/classes/${c}/game`,{},'POST',false,headers)).body.id,game.body.id);
         assert.equal((await call('/api/play/lessons/'+game.body.id,undefined,'GET',false,headers)).body.class_id,c);
-        const sounds=await call('/api/play/sounds',undefined,'GET',false,headers);assert.equal(sounds.status,200);assert.deepEqual(Object.keys(sounds.body),['items']);assert.ok(sounds.body.items.every(s=>s.enabled));
+        const sounds=await call('/api/play/sounds',undefined,'GET',false,headers);assert.equal(sounds.status,200);assert.deepEqual(Object.keys(sounds.body),['items']);assert.ok(sounds.body.items.every(s=>s.enabled));assert.equal(sounds.body.items.length,4);for(const s of sounds.body.items){assert.match(s.url,/^theme-media\/school-sounds\/confirmation-[1-4]\.mp3\?v=[a-f0-9]{64}$/);assert.equal((await fetch(origin+'/'+s.url)).status,200);}assert.equal((await fetch(origin+'/sound/1.mp3')).status,404);
         for(const path of ['/api/classes','/api/avatars','/api/events',`/api/classes/${c}/stats`,`/api/classes/${c}/students`])assert.equal((await call(path,undefined,'GET',false)).status,401);
         for(const path of ['/api/play/events','/api/play/students','/api/play/avatars','/api/play/sounds/refresh'])assert.equal((await call(path,{},'POST',false,headers)).status,404);
         assert.equal((await call('/api/play/classes',undefined,'GET',false,{origin:'https://evil.example'})).status,403);

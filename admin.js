@@ -1,10 +1,10 @@
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
-import { THEMES, themeById } from './themes.js?v=2.6.4';
+import { THEMES, themeById } from './themes.js?v=2.6.5';
 import { celebrate } from './celebration.js';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.4';
-import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.4';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.5';
+import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.5';
 const themePreviewPlaylist=createBackgroundPlaylist($('theme-preview-video'));
 let rosterPreview = null;
 let classStats = null, statsRevision = 0;
@@ -20,9 +20,8 @@ function setThemeCardPlayback(active){document.querySelectorAll('.theme-card-fra
 function setTab(name) {
   setThemeCardPlayback(name==='themes');
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
-  if(name!=='sounds')$('sound-preview').pause();
   if(name!=='themes'){$('theme-preview-audio').pause();themePreviewPlaylist.setEnabled(false);}
-  for (const tab of ['classes', 'statistics', 'avatars', 'sounds', 'themes', 'events', 'backup']) $('tab-' + tab).hidden = tab !== name;
+  for (const tab of ['classes', 'statistics', 'avatars', 'themes', 'events', 'backup']) $('tab-' + tab).hidden = tab !== name;
 }
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
   setTab(b.dataset.tab);
@@ -54,9 +53,7 @@ async function enter() {
   const query=new URLSearchParams(location.search),classId=query.get('class');
   if(classId){$('class-select').value=classId;await loadRoster();$('stats-class').value=classId;await loadClassStats();}
   if(query.get('view')==='statistics')setTab('statistics');
-  await loadSounds();
-  if(soundData.refreshing)pollSounds().catch(e=>{$('sound-sync-status').textContent=e.message;});
-  else if(!soundData.autoSync?.enabled)refreshSounds().catch(e=>{$('sound-sync-status').textContent=e.message;});
+
 }
 $('logout').addEventListener('click', async () => { try { await api('/api/logout', {}); await showAuth(); notice('已登出'); } catch (e) { notice(e.message, true); } });
 async function loadClasses() {
@@ -306,53 +303,6 @@ $('confirm-import').addEventListener('click',async()=>{
   }catch(error){notice(error.message,true);button.disabled=false;}
 });
 
-
-let soundData=null,soundDirty=false,soundPoll=null;
-function syncSoundStatus(){
-  if(!soundData)return;
-  const attempted=soundData.attempt;
-  const base=`清單：${soundData.scope} · 取得時間 ${date(soundData.updatedAt)}${soundData.captureMethod==='browser-dom'?' · 瀏覽器讀取成功':''}`;
-  $('sound-sync-status').textContent=soundData.refreshing?'正在從 memes.tw 更新音效，期間仍可使用原有清單⋯':attempted?.ok===false?`${base}。上次伺服器自動同步：${attempted.error}`:`${base}${attempted?.ok?' · 更新成功':''}`;
-  if(soundData.autoSync?.enabled)$('sound-sync-status').textContent+=soundData.autoSync.nextAt?`。伺服器自動更新已啟用：下次 ${date(soundData.autoSync.nextAt)}（成功後每 ${soundData.autoSync.intervalHours} 小時更新）`:'。伺服器自動更新已啟用';
-  $('sound-sync-status').classList.toggle('sync-error',attempted?.ok===false&&!soundData.refreshing);
-}
-async function loadSounds(){
-  const data=await api('/api/sounds');
-  if(soundDirty&&soundData){const choices=new Map(soundData.items.map(s=>[s.id,s.enabled]));for(const s of data.items)if(choices.has(s.id))s.enabled=choices.get(s.id);}
-  soundData=data;syncSoundStatus();renderSounds();
-}
-function renderSounds(){
-  if(!soundData)return;
-  tabCount('sounds-tab-count',`${countFormat.format(soundData.items.length)} 項`,`${soundData.items.length} 項可管理音效`);
-  const query=$('sound-search').value.trim().toLowerCase(),items=soundData.items.filter(s=>s.name.toLowerCase().includes(query));
-  $('sound-count').textContent=`已選用 ${soundData.items.filter(s=>s.enabled).length} / ${soundData.items.length} 項 · 顯示 ${items.length} 項${soundDirty?' · 尚未儲存':''}`;
-  $('sound-list').replaceChildren(...items.map(s=>{
-    const card=node('div',undefined,'sound-row'),label=node('label'),check=document.createElement('input');check.type='checkbox';check.checked=s.enabled;check.value=s.id;
-    check.addEventListener('change',()=>{s.enabled=check.checked;soundDirty=true;$('sound-count').textContent=`已選用 ${soundData.items.filter(s=>s.enabled).length} / ${soundData.items.length} 項 · 顯示 ${items.length} 項 · 尚未儲存`;});
-    label.append(check,node('span',s.name));const source=node('a','來源 ↗');source.href=s.sourceUrl;source.target='_blank';source.rel='noopener';
-    card.append(label,button('▶ 試聽',async()=>{const audio=$('sound-preview');audio.src=s.url;try{await audio.play();}catch{notice('這項音效暫時未能播放，請稍後重試',true);}}),source);return card;
-  }));
-  if(!items.length)$('sound-list').append(node('p','沒有符合的音效。','empty'));
-}
-async function refreshSounds(){
-  if(soundPoll)clearTimeout(soundPoll);
-  $('refresh-sounds').disabled=true;
-  try{await api('/api/sounds/refresh',{});await pollSounds();}catch(e){$('refresh-sounds').disabled=false;throw e;}
-}
-async function pollSounds(){
-  await loadSounds();
-  if(soundData.refreshing)soundPoll=setTimeout(()=>pollSounds().catch(e=>{$('refresh-sounds').disabled=false;$('sound-sync-status').textContent=e.message;}),1500);
-  else {$('refresh-sounds').disabled=false;soundPoll=null;}
-}
-$('refresh-sounds').addEventListener('click',()=>refreshSounds().catch(e=>notice(e.message,true)));
-$('sound-search').addEventListener('input',renderSounds);
-$('stop-sound-preview').addEventListener('click',()=>{$('sound-preview').pause();});
-for(const [id,value] of [['select-all-sounds',true],['select-no-sounds',false]])$(id).addEventListener('click',()=>{if(soundData){for(const s of soundData.items)s.enabled=value;soundDirty=true;renderSounds();}});
-form('save-sounds',async()=>{
-  if(!soundData)return;
-  soundData=await api('/api/sounds',{disabled:soundData.items.filter(s=>!s.enabled).map(s=>s.id)},'PUT');soundDirty=false;renderSounds();notice('音效勾選已儲存');
-  if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.postMessage('updated');channel.close();}
-});
 
 let selectedTheme='basic',themeRevision=0,previewRevision=0;
 async function previewTheme(id){

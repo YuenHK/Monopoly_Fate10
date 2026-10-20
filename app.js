@@ -1,8 +1,8 @@
 import { celebrate } from './celebration.js';
 import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
-import { themeById } from './themes.js?v=2.6.4';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.4';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.4';
+import { themeById } from './themes.js?v=2.6.5';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.5';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.5';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -24,13 +24,18 @@ function syncMediaPreferences(){
 }
 for(const [key,id] of [['music','music-volume'],['effects','effects-volume']])$(id).addEventListener('input',()=>{devicePrefs[key]=Number($(id).value);syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
 $('low-power').addEventListener('change',()=>{devicePrefs.lowPower=$('low-power').checked;syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
-function project(on){document.body.classList.toggle('projection-mode',on);$('exit-projection').hidden=!on;$('projection-mode').checked=on;if(on)$('display-settings').open=false;}
-$('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape')project(false);});
+const boardMenu=$('board-menu');
+function closeBoardMenu(restoreFocus=false){boardMenu.open=false;$('display-settings').open=false;if(restoreFocus)$('board-menu-toggle').focus();}
+document.addEventListener('pointerdown',e=>{if(boardMenu.open&&!boardMenu.contains(e.target))closeBoardMenu();});
+boardMenu.addEventListener('focusout',e=>{if(e.relatedTarget&&!boardMenu.contains(e.relatedTarget))closeBoardMenu();});
+boardMenu.addEventListener('toggle',()=>{if(!boardMenu.open)$('display-settings').open=false;});
+function project(on){document.body.classList.toggle('projection-mode',on);$('exit-projection').hidden=!on;$('projection-mode').checked=on;if(on)closeBoardMenu();}
+$('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(boardMenu.open){e.preventDefault();closeBoardMenu(true);}else project(false);}});
 syncMediaPreferences();
 
 let themeLoadRevision=0;
 async function applyTheme(id){
-  configuredTheme=id;
+  configuredTheme=id;$('temporary-theme').value=temporaryTheme||id;
   const request=++themeLoadRevision,theme=await withBackgroundLibrary(themeById(temporaryTheme||configuredTheme));if(request!==themeLoadRevision)return;
   if(themeLoaded&&theme.id===currentTheme.id&&theme.libraryRevision===currentTheme.libraryRevision)return;
   const sameTheme=themeLoaded&&theme.id===currentTheme.id;
@@ -50,8 +55,8 @@ document.addEventListener('visibilitychange',()=>backgroundPlaylist.setEnabled(!
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncMediaPreferences);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function startMedia(){mediaUnlocked=true;backgroundPlaylist.setEnabled(!reducedMedia()&&document.visibilityState!=='hidden');if(!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});}
-function sound(){startMedia();if(muted||devicePrefs.effects===0)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，可在後台試聽或更換音效',true));}
-async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled);}
+function sound(){startMedia();if(muted||devicePrefs.effects===0)return;if(currentTheme.sound)sfx.src=currentTheme.sound;else{if(!soundChoices.length)return;sfx.src=soundChoices[Math.floor(Math.random()*soundChoices.length)].url;}sfx.play().catch(()=>notice('音效暫時未能播放，請稍後重試',true));}
+async function loadSoundChoices(){const data=await api('/api/sounds');soundChoices=data.items.filter(s=>s.enabled&&/^school-confirmation-[1-4]$/.test(s.id)&&new RegExp('^theme-media/school-sounds/confirmation-'+s.id.slice(-1)+'\\.mp3\\?v=[a-f0-9]{64}$').test(s.url));}
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-sounds');channel.onmessage=()=>loadSoundChoices().catch(()=>{});}
 window.addEventListener('focus',()=>{loadSoundChoices().catch(()=>{});loadTheme().catch(()=>{});});
 if('BroadcastChannel' in window){const channel=new BroadcastChannel('monopoly-theme');channel.onmessage=()=>loadTheme().catch(()=>{});}
