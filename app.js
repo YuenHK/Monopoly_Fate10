@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask} from './play-performance.js?v=2.6.11';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.11';
+import {createReadCache,createLoadingTask} from './play-performance.js?v=2.6.12';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.12';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.11';
-import { themeById } from './themes.js?v=2.6.11';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.11';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.11';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.12';
+import { themeById } from './themes.js?v=2.6.12';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.12';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.12';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -27,12 +27,19 @@ function syncMediaPreferences(){
 for(const [key,id] of [['music','music-volume'],['effects','effects-volume']])$(id).addEventListener('input',()=>{devicePrefs[key]=Number($(id).value);syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
 $('low-power').addEventListener('change',()=>{devicePrefs.lowPower=$('low-power').checked;syncMediaPreferences();try{localStorage.setItem('monopoly-playback',JSON.stringify(devicePrefs));}catch{}});
 const boardMenu=$('board-menu');
+function setHeaderExpanded(on){
+ if(on&&document.body.classList.contains('projection-mode'))project(false);
+ $('front-header').hidden=!on;$('front-header-toggle').setAttribute('aria-expanded',String(on));
+ const label=on?'收起頂部標題列':'顯示頂部標題列';$('front-header-toggle').setAttribute('aria-label',label);$('front-header-toggle').title=label;
+ if(!on)closeBoardMenu();
+}
+$('front-header-toggle').addEventListener('click',()=>setHeaderExpanded($('front-header').hidden));
 function closeBoardMenu(restoreFocus=false){boardMenu.open=false;$('display-settings').open=false;if(restoreFocus)$('board-menu-toggle').focus();}
 document.addEventListener('pointerdown',e=>{if(boardMenu.open&&!boardMenu.contains(e.target))closeBoardMenu();});
 boardMenu.addEventListener('focusout',e=>{if(e.relatedTarget&&!boardMenu.contains(e.relatedTarget))closeBoardMenu();});
 boardMenu.addEventListener('toggle',()=>{if(!boardMenu.open)$('display-settings').open=false;});
-function project(on){document.body.classList.toggle('projection-mode',on);$('exit-projection').hidden=!on;$('projection-mode').checked=on;if(on)closeBoardMenu();}
-$('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(boardMenu.open){e.preventDefault();closeBoardMenu(true);}else project(false);}});
+function project(on){document.body.classList.toggle('projection-mode',on);$('exit-projection').hidden=!on;$('projection-mode').checked=on;if(on)setHeaderExpanded(false);}
+$('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(boardMenu.open){e.preventDefault();closeBoardMenu(true);}else if(!$('front-header').hidden){setHeaderExpanded(false);$('front-header-toggle').focus();}else project(false);}});
 syncMediaPreferences();
 
 let themeLoadRevision=0;

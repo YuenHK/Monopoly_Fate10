@@ -25,3 +25,8 @@
 
 /* Connection feedback belongs below the central class controls. */
 #lobby #connection-state{text-align:center}
+
+/* The public header starts folded; the compact control stays reachable. */
+.game-page #front-header[hidden]{display:none}
+.game-page #front-header{padding-left:76px}
+#front-header-toggle{position:fixed;top:12px;left:12px;z-index:50;width:40px;height:40px;padding:0}
