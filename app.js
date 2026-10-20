@@ -1,9 +1,9 @@
-import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.8';
+import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.9';
 import { celebrate } from './celebration.js';
 import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js';
-import { themeById } from './themes.js?v=2.6.8';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.8';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.8';
+import { themeById } from './themes.js?v=2.6.9';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.9';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.9';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -43,6 +43,7 @@ async function applyTheme(id,policy){
   currentTheme=theme;themeLoaded=true;document.body.dataset.theme=theme.id;
   sfx.pause();if(!sameMusic){bgm.pause();if(theme.music)bgm.src=theme.music;else bgm.removeAttribute('src');bgm.load();}
   await loadSoundChoices();
+  for(const link of document.querySelectorAll('[data-theme-video-link]')){link.hidden=!theme.externalVideo;if(theme.externalVideo)link.href=theme.externalVideo.url;else link.removeAttribute('href');}
   backgroundPlaylist.setTheme(theme);
   syncMediaPreferences();
   if(currentTheme.music&&mediaUnlocked&&!muted&&devicePrefs.music>0)bgm.play().catch(()=>{});
@@ -145,3 +146,5 @@ $('change-lesson').addEventListener('click',async()=>{if(busy)return;$('game').h
 window.addEventListener('resize',()=>{if(renderedBoard)renderBoard(renderedBoard);});
 try{await lobby();const query=new URLSearchParams(location.search);let classId=query.get('class');if(!classId&&query.get('lesson'))classId=(await api('/api/lessons/'+query.get('lesson'))).class_id;if(classId)await openClass(classId);}
 catch(e){notice(e.message,true);}
+
+for(const link of document.querySelectorAll('[data-theme-video-link]'))link.addEventListener('click',()=>{bgm.pause();sfx.pause();});

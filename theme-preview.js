@@ -1,20 +1,23 @@
 import {celebrate} from './celebration.js';
-import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.8';
+import {loadMediaPolicy,approvedSchoolSound} from './media-policy.js?v=2.6.9';
 import {apiOrigin} from './shared.js';
 // Synthetic students only. Read-only media requests; no classroom or draw writes.
-import { themeById } from './themes.js?v=2.6.8';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.8';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.8';
+import { themeById } from './themes.js?v=2.6.9';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.9';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.9';
 const params=new URLSearchParams(location.search),themeId=themeById(params.get('theme')).id,interactive=params.get('interactive')==='1';
 let theme=await withBackgroundLibrary(themeById(themeId));
 document.body.dataset.theme=theme.id;
+function syncExternalLink(){for(const link of document.querySelectorAll('[data-theme-video-link]')){link.hidden=!theme.externalVideo;if(theme.externalVideo)link.href=theme.externalVideo.url;else link.removeAttribute('href');}}
+syncExternalLink();
 const video=document.getElementById('theme-video');const playlist=createBackgroundPlaylist(video);playlist.setTheme(theme);
 let requestedPlayback=false;
 function playback(playing){requestedPlayback=playing;const active=playing&&document.visibilityState!=='hidden'&&!matchMedia('(prefers-reduced-motion: reduce)').matches;video.preload=active?'auto':'metadata';playlist.setEnabled(active);}
 document.addEventListener('visibilitychange',()=>playback(requestedPlayback));
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>playback(requestedPlayback));
-const report=()=>{if(parent!==window)parent.postMessage({type:'theme-preview-status',playing:!video.paused&&video.readyState>=2},location.origin);};
+const report=()=>{if(parent!==window)parent.postMessage({type:'theme-preview-status',external:Boolean(theme.externalVideo),playing:!video.paused&&video.readyState>=2},location.origin);};
 for(const event of ['play','pause','loadeddata','canplay','error'])video.addEventListener(event,report);
+report();
 playback(new URLSearchParams(location.search).get('play')!=='0');
 window.addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='theme-preview-play')playback(event.data.playing===true);});
 const board=document.getElementById('board-container');
@@ -41,7 +44,7 @@ async function simulate(quick){
  if(simulating||!interactive)return;simulating=true;
  const buttons=[document.getElementById('roll'),document.getElementById('quick')];buttons.forEach(b=>b.disabled=true);
  try{
-  const policy=await loadMediaPolicy({force:true});theme=await withBackgroundLibrary(themeById(themeId),{policy});playlist.setTheme(theme);playback(true);
+  const policy=await loadMediaPolicy({force:true});theme=await withBackgroundLibrary(themeById(themeId),{policy});playlist.setTheme(theme);syncExternalLink();playback(true);
   sound.pause();music.pause();
   if(theme.music){music.src=theme.music;music.volume=.1;music.play().catch(()=>{});}else{music.removeAttribute('src');music.load();}
   try{const r=await fetch(apiOrigin()+'/api/play/sounds?theme='+themeId,{credentials:'omit',cache:'no-store'});if(!r.ok)throw Error();const data=await r.json(),items=theme.mediaAvailable?data.items.filter(approvedSchoolSound):[];if(items.length){sound.src=items[Math.floor(Math.random()*items.length)].url;sound.volume=.8;sound.play().catch(()=>{});}}catch{sound.pause();}

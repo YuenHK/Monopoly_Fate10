@@ -1,11 +1,11 @@
-import {loadMediaPolicy,filterThemeMedia} from './media-policy.js?v=2.6.8';
-import {SCHOOL_VIDEO_ASSETS} from './themes.js?v=2.6.8';
+import {loadMediaPolicy,filterThemeMedia} from './media-policy.js?v=2.6.9';
+import {SCHOOL_VIDEO_ASSETS} from './themes.js?v=2.6.9';
 // One public manifest is shared by Pages and Render; no teacher data or credentials leave the app.
 export const LIBRARY_BASE = 'https://yuenhk.github.io/Monopoly_Fate10/theme-media/';
 export const LIBRARY_URL = LIBRARY_BASE + 'library.json';
-const files = {basic:['meme-emoji.mp4','meme-ladle.mp4','meme-mop.mp4'],cat:['cat-play.mp4','cat-sleep.mp4','cat-ball.mp4'],dog:['dog-play.mp4','dog-sleep.mp4','dog-outdoor.mp4']};
+const files = {cat:['cat-play.mp4','cat-sleep.mp4','cat-ball.mp4'],dog:['dog-play.mp4','dog-sleep.mp4','dog-outdoor.mp4']};
 export function validateLibrary(data) {
-  if (data?.version!==3 || data.policy!=='school-v1' || !Array.isArray(data.clips) || data.clips.length!==9) return null;
+  if (data?.version!==4 || data.policy!=='school-v1' || !Array.isArray(data.clips) || data.clips.length!==6) return null;
   const seen=new Set();
   for (const clip of data.clips) {
     if (!files[clip.theme]?.includes(clip.file) || seen.has(clip.file) || !SCHOOL_VIDEO_ASSETS[clip.theme]?.includes(clip.asset) || clip.review?.status!=='approved' || clip.review?.policy!=='school-v1' || !/^[a-f0-9]{64}$/.test(clip.sha256)) return null;
@@ -39,6 +39,7 @@ export const loadBackgroundLibrary=createLibraryLoader();
 export async function withBackgroundLibrary(theme,{policy}={}) {
   if(policy===undefined)policy=await loadMediaPolicy();
   if(!policy)return filterThemeMedia(theme,null);
+  if(theme.id==='basic')return filterThemeMedia({...theme,video:null,videos:[],libraryRevision:'rickroll-external-v1'},policy);
   const data=await loadBackgroundLibrary();
   if (!data) return filterThemeMedia({...theme,libraryRevision:'bundled-school-v1'},policy);
   const revision=data.updatedAt||'initial-2026-10-20';
