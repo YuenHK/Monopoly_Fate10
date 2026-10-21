@@ -28,3 +28,8 @@ export function createLoadingTask({render,slowMs=8000,schedule=setTimeout,cancel
  }
  return {run,retry:()=>retry?run(retry):Promise.resolve(false)};
 }
+
+// Grow into the visible viewport without reducing the existing readable row heights.
+export function fitBoardHeight({viewportHeight,boardTop,rows,rowHeight,bottomGap=10}){
+ return Math.floor(Math.max(520,rows*rowHeight,viewportHeight-Math.max(0,boardTop)-bottomGap));
+}
