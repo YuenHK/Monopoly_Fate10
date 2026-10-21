@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.14';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.14';
+import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.15';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.15';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.14';
-import { themeById } from './themes.js?v=2.6.14';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.14';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.14';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.15';
+import { themeById } from './themes.js?v=2.6.15';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.15';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.15';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -34,12 +34,11 @@ function setHeaderExpanded(on){
  if(!on)closeBoardMenu();scheduleBoardViewport();
 }
 $('front-header-toggle').addEventListener('click',()=>setHeaderExpanded($('front-header').hidden));
-function closeBoardMenu(restoreFocus=false){boardMenu.open=false;$('display-settings').open=false;if(restoreFocus)$('board-menu-toggle').focus();}
-document.addEventListener('pointerdown',e=>{if(boardMenu.open&&!boardMenu.contains(e.target))closeBoardMenu();});
+function closeBoardMenu(restoreFocus=false){$('display-settings').open=false;if(restoreFocus)$('display-settings').querySelector('summary').focus();}
+document.addEventListener('pointerdown',e=>{if($('display-settings').open&&!$('display-settings').contains(e.target))closeBoardMenu();});
 boardMenu.addEventListener('focusout',e=>{if(e.relatedTarget&&!boardMenu.contains(e.relatedTarget))closeBoardMenu();});
-boardMenu.addEventListener('toggle',()=>{if(!boardMenu.open)$('display-settings').open=false;});
 function project(on){document.body.classList.toggle('projection-mode',on);$('exit-projection').hidden=!on;$('projection-mode').checked=on;if(on)setHeaderExpanded(false);scheduleBoardViewport();}
-$('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(boardMenu.open){e.preventDefault();closeBoardMenu(true);}else if(!$('front-header').hidden){setHeaderExpanded(false);$('front-header-toggle').focus();}else project(false);}});
+$('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('display-settings').open){e.preventDefault();closeBoardMenu(true);}else if(!$('front-header').hidden){setHeaderExpanded(false);$('front-header-toggle').focus();}else project(false);}});
 syncMediaPreferences();
 
 let themeLoadRevision=0;
