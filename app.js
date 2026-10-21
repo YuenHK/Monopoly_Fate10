@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask} from './play-performance.js?v=2.6.12';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.12';
+import {createReadCache,createLoadingTask,fitBoardHeight} from './play-performance.js?v=2.6.13';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.13';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.12';
-import { themeById } from './themes.js?v=2.6.12';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.12';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.12';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.13';
+import { themeById } from './themes.js?v=2.6.13';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.13';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.13';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -31,14 +31,14 @@ function setHeaderExpanded(on){
  if(on&&document.body.classList.contains('projection-mode'))project(false);
  $('front-header').hidden=!on;$('front-header-toggle').setAttribute('aria-expanded',String(on));
  const label=on?'收起頂部標題列':'顯示頂部標題列';$('front-header-toggle').setAttribute('aria-label',label);$('front-header-toggle').title=label;
- if(!on)closeBoardMenu();
+ if(!on)closeBoardMenu();scheduleBoardViewport();
 }
 $('front-header-toggle').addEventListener('click',()=>setHeaderExpanded($('front-header').hidden));
 function closeBoardMenu(restoreFocus=false){boardMenu.open=false;$('display-settings').open=false;if(restoreFocus)$('board-menu-toggle').focus();}
 document.addEventListener('pointerdown',e=>{if(boardMenu.open&&!boardMenu.contains(e.target))closeBoardMenu();});
 boardMenu.addEventListener('focusout',e=>{if(e.relatedTarget&&!boardMenu.contains(e.relatedTarget))closeBoardMenu();});
 boardMenu.addEventListener('toggle',()=>{if(!boardMenu.open)$('display-settings').open=false;});
-function project(on){document.body.classList.toggle('projection-mode',on);$('exit-projection').hidden=!on;$('projection-mode').checked=on;if(on)setHeaderExpanded(false);}
+function project(on){document.body.classList.toggle('projection-mode',on);$('exit-projection').hidden=!on;$('projection-mode').checked=on;if(on)setHeaderExpanded(false);scheduleBoardViewport();}
 $('projection-mode').addEventListener('change',()=>project($('projection-mode').checked));$('exit-projection').addEventListener('click',()=>project(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(boardMenu.open){e.preventDefault();closeBoardMenu(true);}else if(!$('front-header').hidden){setHeaderExpanded(false);$('front-header-toggle').focus();}else project(false);}});
 syncMediaPreferences();
 
@@ -124,7 +124,7 @@ function gridPos(i,w,h){if(i<w)return[1,i+1];if(i<w+h-1)return[i-w+2,w];if(i<2*w
 function renderBoard(board){
   renderedBoard=board;const container=$('board-container'),compact=document.documentElement.clientWidth<=1024;
   const width=Math.max(5,Math.min(board.width,Math.floor((document.documentElement.clientWidth-(compact?24:40))/78)));
-  const height=(board.cells.length+4)/2-width;container.style.gridTemplateColumns=`repeat(${width},minmax(0,1fr))`;container.style.gridTemplateRows=`repeat(${height},minmax(0,1fr))`;container.style.setProperty('--board-rows',height);container.classList.toggle('long-board',height*72>innerHeight-180);
+  const height=(board.cells.length+4)/2-width;container.style.gridTemplateColumns=`repeat(${width},minmax(0,1fr))`;container.style.gridTemplateRows=`repeat(${height},minmax(0,1fr))`;container.style.setProperty('--board-rows',height);container.classList.add('viewport-board');
   container.querySelectorAll('.cell').forEach(c=>c.remove());
   board.cells.forEach((cell,i)=>{
     const e=node('div',undefined,'cell '+cell.type);e.id='cell-'+i;
@@ -135,8 +135,26 @@ function renderBoard(board){
       e.append(avatar(s?.avatar_id,s?.name||'學生'),node('span',s?.name||'學生','cell-text'),node('span',[s?.school_class,s?.number].filter(Boolean).join(' '),'cell-number'));
     }else e.append(node('span',cell.type==='chance'?'❓':'❗','special-icon'),node('span',cell.type==='chance'?'機會':'命運','cell-text'));
     const[r,c]=gridPos(i,width,height);e.style.gridRow=r;e.style.gridColumn=c;container.append(e);
-  });active();
+  });updateBoardViewport();active();
 }
+let boardViewportFrame=0;
+function scheduleBoardViewport(){
+ if(boardViewportFrame)return;
+ boardViewportFrame=requestAnimationFrame(()=>{boardViewportFrame=0;updateBoardViewport();});
+}
+function updateBoardViewport(){
+ if(!renderedBoard||$('game').hidden)return;
+ const container=$('board-container'),width=document.documentElement.clientWidth;
+ const rows=Number(container.style.getPropertyValue('--board-rows')),rowHeight=width<=600?84:width<=1024?82:72;
+ const viewportHeight=window.visualViewport?.height||innerHeight,boardTop=container.getBoundingClientRect().top;
+ const bottomGap=parseFloat(getComputedStyle(container.parentElement).paddingBottom)||10;
+ const height=fitBoardHeight({viewportHeight,boardTop,rows,rowHeight,bottomGap});
+ container.style.setProperty('--board-fit-height',height+'px');
+ container.classList.toggle('long-board',rows*rowHeight>viewportHeight-Math.max(0,boardTop)-bottomGap);
+}
+window.visualViewport?.addEventListener('resize',scheduleBoardViewport);
+const boardViewportObserver=new ResizeObserver(scheduleBoardViewport);
+boardViewportObserver.observe($('front-header'));boardViewportObserver.observe($('context-text').parentElement);
 function active(){document.querySelectorAll('.cell.active').forEach(e=>e.classList.remove('active'));$('cell-'+currentIndex)?.classList.add('active');}
 async function draw(mode){
   if(busy||!lesson)return;

@@ -30,3 +30,6 @@
 .game-page #front-header[hidden]{display:none}
 .game-page #front-header{padding-left:76px}
 #front-header-toggle{position:fixed;top:12px;left:12px;z-index:50;width:40px;height:40px;padding:0}
+
+/* Use the measured space below the actual header on every public-board breakpoint. */
+.game-page #board-container.viewport-board{width:100%;height:var(--board-fit-height);min-height:520px;max-height:none}
