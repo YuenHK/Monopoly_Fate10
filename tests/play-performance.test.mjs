@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createReadCache,createLoadingTask,fitBoardHeight} from '../play-performance.js';
+import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from '../play-performance.js';
 function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
 test('concurrent sound reads share one request, cache expires, and policy revisions cannot reuse old choices',async()=>{
  let time=0,calls=0;const cache=createReadCache({ttl:60000,now:()=>time});
@@ -44,4 +44,20 @@ test('desktop and tablet boards fill actual free height and respond to header fo
 test('phone and short landscape screens retain readable rows and allow vertical scrolling',()=>{
  assert.equal(fitBoardHeight({viewportHeight:844,boardTop:42,rows:17,rowHeight:84,bottomGap:14}),1428);
  assert.equal(fitBoardHeight({viewportHeight:390,boardTop:42,rows:6,rowHeight:72}),520);
+});
+
+test('phone perimeter fits portrait and landscape without dropping any cells',()=>{
+ for(const [width,height] of [[378,794],[832,340],[308,518],[556,270]]){
+  for(const cellCount of [32,44,52,64]){
+   const {columns,rows}=phoneBoardLayout({cellCount,width,height});
+   assert.equal(2*columns+2*rows-4,cellCount);
+   assert.ok(columns>=4&&rows>=4);
+   const cellWidth=(width-6-(columns-1)*2)/columns,cellHeight=(height-6-(rows-1)*2)/rows;
+   assert.ok((columns-2)*(cellWidth+2)-16>=150);
+   assert.ok((rows-2)*(cellHeight+2)-16>=176);
+  }
+ }
+ const portrait=phoneBoardLayout({cellCount:44,width:378,height:794});
+ const landscape=phoneBoardLayout({cellCount:44,width:832,height:340});
+ assert.ok(landscape.columns>portrait.columns);
 });
