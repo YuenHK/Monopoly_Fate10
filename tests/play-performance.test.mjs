@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createReadCache,createLoadingTask} from '../play-performance.js';
+import {createReadCache,createLoadingTask,fitBoardHeight} from '../play-performance.js';
 function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
 test('concurrent sound reads share one request, cache expires, and policy revisions cannot reuse old choices',async()=>{
  let time=0,calls=0;const cache=createReadCache({ttl:60000,now:()=>time});
@@ -33,4 +33,15 @@ test('public server serves the startup helper as JavaScript',async()=>{
  const app=await createApplication({dataDir:dir,autoSoundSync:false});
  try{await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));const r=await fetch('http://127.0.0.1:'+app.server.address().port+'/play-performance.js');assert.equal(r.status,200);assert.match(r.headers.get('content-type'),/javascript/);assert.match(await r.text(),/export function createLoadingTask/);}
  finally{await app.close();await rm(dir,{recursive:true,force:true});}
+});
+
+test('desktop and tablet boards fill actual free height and respond to header folding',()=>{
+ assert.equal(fitBoardHeight({viewportHeight:900,boardTop:42,rows:6,rowHeight:72}),848);
+ assert.equal(fitBoardHeight({viewportHeight:900,boardTop:42.3,rows:6,rowHeight:72}),847);
+ assert.equal(fitBoardHeight({viewportHeight:900,boardTop:138,rows:6,rowHeight:72}),752);
+ assert.equal(fitBoardHeight({viewportHeight:1180,boardTop:42,rows:10,rowHeight:82,bottomGap:18}),1120);
+});
+test('phone and short landscape screens retain readable rows and allow vertical scrolling',()=>{
+ assert.equal(fitBoardHeight({viewportHeight:844,boardTop:42,rows:17,rowHeight:84,bottomGap:14}),1428);
+ assert.equal(fitBoardHeight({viewportHeight:390,boardTop:42,rows:6,rowHeight:72}),520);
 });
