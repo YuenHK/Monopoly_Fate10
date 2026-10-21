@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask,fitBoardHeight} from './play-performance.js?v=2.6.13';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.13';
+import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.14';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.14';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.13';
-import { themeById } from './themes.js?v=2.6.13';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.13';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.13';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.14';
+import { themeById } from './themes.js?v=2.6.14';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.14';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.14';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -122,9 +122,7 @@ async function openClass(classId){
 }
 function gridPos(i,w,h){if(i<w)return[1,i+1];if(i<w+h-1)return[i-w+2,w];if(i<2*w+h-2)return[h,w-(i-(w+h-2))];return[h-(i-(2*w+h-3)),1];}
 function renderBoard(board){
-  renderedBoard=board;const container=$('board-container'),compact=document.documentElement.clientWidth<=1024;
-  const width=Math.max(5,Math.min(board.width,Math.floor((document.documentElement.clientWidth-(compact?24:40))/78)));
-  const height=(board.cells.length+4)/2-width;container.style.gridTemplateColumns=`repeat(${width},minmax(0,1fr))`;container.style.gridTemplateRows=`repeat(${height},minmax(0,1fr))`;container.style.setProperty('--board-rows',height);container.classList.add('viewport-board');
+  renderedBoard=board;const container=$('board-container');container.classList.add('viewport-board');
   container.querySelectorAll('.cell').forEach(c=>c.remove());
   board.cells.forEach((cell,i)=>{
     const e=node('div',undefined,'cell '+cell.type);e.id='cell-'+i;
@@ -134,7 +132,7 @@ function renderBoard(board){
       e.setAttribute('aria-label',s?.display_id||s?.name||'學生');
       e.append(avatar(s?.avatar_id,s?.name||'學生'),node('span',s?.name||'學生','cell-text'),node('span',[s?.school_class,s?.number].filter(Boolean).join(' '),'cell-number'));
     }else e.append(node('span',cell.type==='chance'?'❓':'❗','special-icon'),node('span',cell.type==='chance'?'機會':'命運','cell-text'));
-    const[r,c]=gridPos(i,width,height);e.style.gridRow=r;e.style.gridColumn=c;container.append(e);
+    container.append(e);
   });updateBoardViewport();active();
 }
 let boardViewportFrame=0;
@@ -145,12 +143,23 @@ function scheduleBoardViewport(){
 function updateBoardViewport(){
  if(!renderedBoard||$('game').hidden)return;
  const container=$('board-container'),width=document.documentElement.clientWidth;
- const rows=Number(container.style.getPropertyValue('--board-rows')),rowHeight=width<=600?84:width<=1024?82:72;
- const viewportHeight=window.visualViewport?.height||innerHeight,boardTop=container.getBoundingClientRect().top;
+ const viewportHeight=window.visualViewport?.height||innerHeight;
+ const phone=width<=600||(width<=1024&&viewportHeight<=600);
+ document.body.classList.toggle('phone-board-fit',phone);
+ container.classList.toggle('phone-fit',phone);
+ const boardTop=container.getBoundingClientRect().top;
  const bottomGap=parseFloat(getComputedStyle(container.parentElement).paddingBottom)||10;
- const height=fitBoardHeight({viewportHeight,boardTop,rows,rowHeight,bottomGap});
+ const availableHeight=Math.floor(viewportHeight-Math.max(0,boardTop)-bottomGap);
+ const columns=phone?phoneBoardLayout({cellCount:renderedBoard.cells.length,width:container.clientWidth,height:availableHeight}).columns:
+ Math.max(5,Math.min(renderedBoard.width,Math.floor((width-(width<=1024?24:40))/78)));
+ const rows=(renderedBoard.cells.length+4)/2-columns,rowHeight=width<=1024?82:72;
+ container.style.gridTemplateColumns=`repeat(${columns},minmax(0,1fr))`;
+ container.style.gridTemplateRows=`repeat(${rows},minmax(0,1fr))`;
+ container.style.setProperty('--board-rows',rows);
+ container.querySelectorAll('.cell').forEach((cell,i)=>{const[r,c]=gridPos(i,columns,rows);cell.style.gridRow=r;cell.style.gridColumn=c;});
+ const height=phone?availableHeight:fitBoardHeight({viewportHeight,boardTop,rows,rowHeight,bottomGap});
  container.style.setProperty('--board-fit-height',height+'px');
- container.classList.toggle('long-board',rows*rowHeight>viewportHeight-Math.max(0,boardTop)-bottomGap);
+ container.classList.toggle('long-board',!phone&&rows*rowHeight>availableHeight);
 }
 window.visualViewport?.addEventListener('resize',scheduleBoardViewport);
 const boardViewportObserver=new ResizeObserver(scheduleBoardViewport);
@@ -190,7 +199,7 @@ function showResult(result){
 $('roll').addEventListener('click',()=>draw('dice'));$('quick').addEventListener('click',()=>draw('quick'));$('recover').addEventListener('click',()=>draw(pending?.mode||'quick'));
 $('close-result').addEventListener('click',()=>{$('result-modal').close();});
 $('change-lesson').addEventListener('click',()=>{if(busy)return;$('game').hidden=true;$('lobby').hidden=false;history.replaceState(null,'',appPath);connection.run(lobby);});
-window.addEventListener('resize',()=>{if(renderedBoard)renderBoard(renderedBoard);});
+window.addEventListener('resize',scheduleBoardViewport);
 async function loadPage(){
  const query=new URLSearchParams(location.search);let classId=query.get('class');
  if(!classId&&query.get('lesson'))classId=(await api('/api/lessons/'+query.get('lesson'))).class_id;

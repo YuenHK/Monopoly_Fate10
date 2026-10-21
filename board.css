@@ -33,3 +33,22 @@
 
 /* Use the measured space below the actual header on every public-board breakpoint. */
 .game-page #board-container.viewport-board{width:100%;height:var(--board-fit-height);min-height:520px;max-height:none}
+
+/* Phone boards occupy one viewport; prioritise names and full-size draw targets. */
+.phone-board-fit .board-scroll{padding:4px 6px 6px;overflow:visible}
+.phone-board-fit .game-context{height:40px;padding:8px 54px;box-sizing:border-box;white-space:nowrap;overflow:hidden;font-size:12px}
+.phone-board-fit #front-header{position:fixed;inset:0 0 auto;z-index:40}
+.game-page #board-container.phone-fit{min-height:0;max-height:none}
+.phone-fit .cell{padding:1px;gap:1px;overflow:hidden}
+.phone-fit .cell .avatar,.phone-fit .special-icon{display:none}
+.phone-fit .cell .cell-text{font-size:11px;line-height:1.15;letter-spacing:0}
+.phone-fit .cell .cell-number{font-size:9px;line-height:1.1}
+.phone-fit .cell.active{transform:none}
+.phone-fit #center-area{display:flex;justify-content:center;overflow:hidden;padding:6px;margin:3px;border-width:1px}
+.phone-fit .center-controls{position:static;gap:8px;max-height:100%;min-height:0}
+.phone-fit .board-eyebrow,.phone-fit .logo-text,.phone-fit .board-hint,.phone-fit .last-result{display:none}
+.phone-fit #status-text{font-size:16px;line-height:1.3;margin:0}
+.phone-fit .dice{width:38px;height:38px;font-size:25px}
+.phone-fit .draw-actions{width:100%;display:flex;flex-direction:column;gap:8px}
+.phone-fit .draw-actions button,.phone-fit #recover{width:100%;min-height:44px;font-size:16px;line-height:1.2;padding:10px 4px}
+@media(orientation:landscape){.phone-fit .draw-actions{flex-direction:row}.phone-fit .draw-actions button{flex:1;min-width:0}.phone-fit .center-controls{gap:6px}.phone-fit .cell .cell-number{display:none}}

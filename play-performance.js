@@ -33,3 +33,17 @@ export function createLoadingTask({render,slowMs=8000,schedule=setTimeout,cancel
 export function fitBoardHeight({viewportHeight,boardTop,rows,rowHeight,bottomGap=10}){
  return Math.floor(Math.max(520,rows*rowHeight,viewportHeight-Math.max(0,boardTop)-bottomGap));
 }
+
+// Preserve every perimeter cell while fitting a phone in either orientation.
+export function phoneBoardLayout({cellCount,width,height}){
+ const sum=(cellCount+4)/2;
+ let best=null;
+ for(let columns=4;columns<=sum-4;columns++){
+  const rows=sum-columns,cellWidth=(width-6-(columns-1)*2)/columns,cellHeight=(height-6-(rows-1)*2)/rows;
+  const centerWidth=(columns-2)*(cellWidth+2)-16,centerHeight=(rows-2)*(cellHeight+2)-16;
+  if(centerWidth<150||centerHeight<176)continue;
+  const score=Math.min(cellWidth/52,cellHeight/36);
+  if(!best||score>best.score)best={columns,rows,score,cellWidth,cellHeight};
+ }
+ return best||{columns:4,rows:sum-4};
+}
