@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.16';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.16';
+import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.17';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.17';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.16';
-import { themeById } from './themes.js?v=2.6.16';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.16';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.16';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.17';
+import { themeById } from './themes.js?v=2.6.17';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.17';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.17';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -34,6 +34,13 @@ function setHeaderExpanded(on){
  if(!on)closeBoardMenu();scheduleBoardViewport();
 }
 $('front-header-toggle').addEventListener('click',()=>setHeaderExpanded($('front-header').hidden));
+// Use click so hiding the header cannot move a pressed draw button before activation.
+$('board-container').addEventListener('click',()=>{
+ if($('front-header').hidden)return;
+ const restoreFocus=$('front-header').contains(document.activeElement);
+ setHeaderExpanded(false);
+ if(restoreFocus)$('front-header-toggle').focus();
+});
 function closeBoardMenu(restoreFocus=false){$('display-settings').open=false;if(restoreFocus)$('display-settings').querySelector('summary').focus();}
 document.addEventListener('pointerdown',e=>{if($('display-settings').open&&!$('display-settings').contains(e.target))closeBoardMenu();});
 boardMenu.addEventListener('focusout',e=>{if(e.relatedTarget&&!boardMenu.contains(e.relatedTarget))closeBoardMenu();});
