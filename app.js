@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.15';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.15';
+import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.16';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.16';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.15';
-import { themeById } from './themes.js?v=2.6.15';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.15';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.15';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.16';
+import { themeById } from './themes.js?v=2.6.16';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.16';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.16';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -56,6 +56,7 @@ async function applyTheme(id,policy){
 }
 $('temporary-theme').addEventListener('change',()=>{
   temporaryTheme=$('temporary-theme').value;mediaUnlocked=true;
+  setHeaderExpanded(false);$('front-header-toggle').focus();
   loadTheme().catch(e=>notice(e.message,true));
 });
 const themeReads=createReadCache({ttl:5000});
@@ -111,7 +112,7 @@ async function openClass(classId){
   $('stats-link').href=apiOrigin()+'/admin.html?class='+lesson.class_id;
   $('status-text').textContent=lesson.must_student?'下一抽必定抽中學生！':'準備好了嗎？';
   history.replaceState(null,'',appPath+'?class='+lesson.class_id);
-  renderBoard(lesson.board);lock(false);
+  setHeaderExpanded(false);renderBoard(lesson.board);lock(false);
   // A closed lesson must still allow switching to a different class.
   $('change-lesson').disabled=false;
   try{pending=JSON.parse(sessionStorage.getItem(pendingKey())||'null');}catch{pending=null;}
@@ -197,7 +198,7 @@ function showResult(result){
 }
 $('roll').addEventListener('click',()=>draw('dice'));$('quick').addEventListener('click',()=>draw('quick'));$('recover').addEventListener('click',()=>draw(pending?.mode||'quick'));
 $('close-result').addEventListener('click',()=>{$('result-modal').close();});
-$('change-lesson').addEventListener('click',()=>{if(busy)return;$('game').hidden=true;$('lobby').hidden=false;history.replaceState(null,'',appPath);connection.run(lobby);});
+$('change-lesson').addEventListener('click',()=>{if(busy)return;setHeaderExpanded(false);$('front-header-toggle').focus();$('game').hidden=true;$('lobby').hidden=false;history.replaceState(null,'',appPath);connection.run(lobby);});
 window.addEventListener('resize',scheduleBoardViewport);
 async function loadPage(){
  const query=new URLSearchParams(location.search);let classId=query.get('class');
