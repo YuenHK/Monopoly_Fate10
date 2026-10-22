@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.18';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.18';
+import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.19';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.19';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.18';
-import { themeById } from './themes.js?v=2.6.18';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.18';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.18';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.19';
+import { themeById } from './themes.js?v=2.6.19';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.19';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.19';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
@@ -138,7 +138,7 @@ function renderBoard(board){
       if(s?.school_class)e.classList.add('has-identity');
       e.setAttribute('aria-label',s?.display_id||s?.name||'學生');
       e.append(avatar(s?.avatar_id,s?.name||'學生'),node('span',s?.name||'學生','cell-text'),node('span',[s?.school_class,s?.number].filter(Boolean).join(' '),'cell-number'));
-    }else e.append(node('span',cell.type==='chance'?'❓':'❗','special-icon'),node('span',cell.type==='chance'?'機會':'命運','cell-text'));
+    }else e.append(node('span',cell.type==='start'?'🏁':cell.type==='chance'?'❓':'❗','special-icon'),node('span',cell.type==='start'?'起點':cell.type==='chance'?'機會':'命運','cell-text'));
     container.append(e);
   });updateBoardViewport();active();
 }

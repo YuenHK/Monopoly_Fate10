@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import QRCode from 'qrcode';
 import { backupSnapshot, packBackup, unpackBackup, validateBackup, applyBackup, snapshotDigest, backupSummary, backupDifferences } from './backup.mjs';
-import { createBoard, sameRoster, nextDraw } from './game.mjs';
+import { createBoard, sameRoster, hasEventCounts, nextDraw } from './game.mjs';
 import { periodRange, countTimeline } from './statistics.mjs';
 import { publicStudent, studentKey, studentDisplay } from './student-identity.js';
 import { nextSoundSync, DEFAULT_SOUND_INTERVAL, DEFAULT_SOUND_RETRY } from './sound-sync.mjs';
@@ -194,8 +194,11 @@ export async function createApplication(options = {}) {
   }
   async function boardFor(lesson, students) {
     let board = lesson.board ? JSON.parse(lesson.board) : null;
-    if (!sameRoster(board, students)) {
+    if (!sameRoster(board, students)||!hasEventCounts(board)) {
+      const previous=board?.cells[board.currentIndex];
       board = createBoard(students);
+      const cursor=board.cells.findIndex(c=>c.type===previous?.type&&(c.type!=='student'||c.studentId===previous.studentId));
+      if(cursor>=0)board.currentIndex=cursor;
       await run('UPDATE lessons SET board=? WHERE id=?', JSON.stringify(board), lesson.id);
     }
     return board;
