@@ -20,7 +20,8 @@ export function createThemeReview({onPolicyChanged=()=>{}}={}){
     search.addEventListener('input',()=>{query=search.value;page=0;render();const next=host.querySelector('input[type=search]');next.focus();next.setSelectionRange(query.length,query.length);});
     shown=shown.filter(i=>i.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()));const pages=Math.max(1,Math.ceil(shown.length/24));page=Math.min(page,pages-1);
     const prev=node('button','上一頁'),next=node('button','下一頁');prev.type=next.type='button';prev.disabled=page===0;next.disabled=page>=pages-1;prev.onclick=()=>{page--;render();};next.onclick=()=>{page++;render();};
-    tools.append(search,prev,node('span',`${page+1} / ${pages} 頁 · ${shown.length} 段`),next);section.insertBefore(tools,wrap);shown=shown.slice(page*24,(page+1)*24);
+    tools.append(search);section.insertBefore(tools,wrap);
+    const pager=node('div',undefined,'actions');pager.setAttribute('aria-label','音效清單分頁');pager.append(prev,node('span',`${page+1} / ${pages} 頁 · ${shown.length} 段`),next);section.append(pager);shown=shown.slice(page*24,(page+1)*24);
     if(data.soundScreening)section.insertBefore(node('p',`原庫 ${data.soundScreening.total} 段；名稱自動排除 ${data.soundScreening.excluded} 段。名稱篩選不等於內容聽審；可另行取消全站播放。`,'muted'),wrap);
    }
    for(const item of shown){

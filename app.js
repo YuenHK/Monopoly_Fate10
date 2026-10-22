@@ -1,10 +1,10 @@
-import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.17';
-import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.17';
+import {createReadCache,createLoadingTask,fitBoardHeight,phoneBoardLayout} from './play-performance.js?v=2.6.18';
+import {loadMediaPolicy,approvedSchoolSound,filterThemeMedia} from './media-policy.js?v=2.6.18';
 import { celebrate } from './celebration.js';
-import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.17';
-import { themeById } from './themes.js?v=2.6.17';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.17';
-import { withBackgroundLibrary } from './background-library.js?v=2.6.17';
+import { $, playApi as api, apiOrigin, node, notice, today, options, form, avatar } from './shared.js?v=2.6.18';
+import { themeById } from './themes.js?v=2.6.18';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.18';
+import { withBackgroundLibrary } from './background-library.js?v=2.6.18';
 const appPath=new URL('./',location.href).pathname;
 $('stats-link').href=apiOrigin()+'/admin.html';
 let classes=[],lesson=null,currentIndex=0,busy=false,muted=false,pending=null,soundChoices=[],renderedBoard=null;
