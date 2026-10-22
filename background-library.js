@@ -1,5 +1,5 @@
-import {loadMediaPolicy,filterThemeMedia} from './media-policy.js?v=2.6.11';
-import {SCHOOL_VIDEO_ASSETS} from './themes.js?v=2.6.11';
+import {loadMediaPolicy,filterThemeMedia} from './media-policy.js?v=2.6.18';
+import {SCHOOL_VIDEO_ASSETS} from './themes.js?v=2.6.18';
 // One public manifest is shared by Pages and Render; no teacher data or credentials leave the app.
 export const LIBRARY_BASE = 'https://yuenhk.github.io/Monopoly_Fate10/theme-media/';
 export const LIBRARY_URL = LIBRARY_BASE + 'library.json';

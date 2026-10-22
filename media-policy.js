@@ -1,6 +1,6 @@
-import {validMemeSound} from './sound-title-policy.js?v=2.6.11';
+import {validMemeSound} from './sound-title-policy.js?v=2.6.18';
 import {apiOrigin} from './shared.js';
-import {THEME_MEDIA} from './themes.js?v=2.6.11';
+import {THEME_MEDIA} from './themes.js?v=2.6.18';
 export function validMediaPolicy(data){return data&&Number.isSafeInteger(data.revision)&&data.revision>=0&&Array.isArray(data.blocked)&&data.blocked.length<=10000&&data.blocked.every(k=>typeof k==='string'&&/^(video|sound|music):[a-zA-Z0-9/_.-]+$/.test(k));}
 export function createMediaPolicyLoader({fetcher=(...args)=>fetch(...args),origin=apiOrigin,now=()=>Date.now()}={}){
  let cached=null,expires=0,pending=null;

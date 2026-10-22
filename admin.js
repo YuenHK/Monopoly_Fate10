@@ -1,12 +1,12 @@
-import {createThemeReview} from './theme-review.js?v=2.6.11';
-import {loadMediaPolicy} from './media-policy.js?v=2.6.11';
+import {createThemeReview} from './theme-review.js?v=2.6.18';
+import {loadMediaPolicy} from './media-policy.js?v=2.6.18';
 import { $, api, node, button, notice, date, today, options, form, avatar, downloadCSV } from './shared.js';
 import { parseEventText, formatEventText } from './event-format.js';
 import { studentDisplay, studentKey } from './student-identity.js';
-import { THEMES, themeById } from './themes.js?v=2.6.11';
+import { THEMES, themeById } from './themes.js?v=2.6.18';
 import { celebrate } from './celebration.js';
-import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.11';
-import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.11';
+import { createBackgroundPlaylist } from './background-playlist.js?v=2.6.18';
+import { withBackgroundLibrary, loadBackgroundLibrary } from './background-library.js?v=2.6.18';
 const themeReview=createThemeReview({onPolicyChanged:async()=>{await loadMediaPolicy({force:true});setThemeCardPlayback(false);setThemeCardPlayback(true);await previewTheme(selectedTheme);if('BroadcastChannel' in window){const c=new BroadcastChannel('monopoly-theme');c.postMessage('updated');c.close();}}});
 const themePreviewPlaylist=createBackgroundPlaylist($('theme-preview-video'));
 let rosterPreview = null;
